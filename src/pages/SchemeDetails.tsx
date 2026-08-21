@@ -2,10 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
-import type { Scheme, LanguageCode } from '../types';
+import type { Scheme } from '../types';
 import { explainScheme, getSchemeById } from '../services/api';
 import type { SchemeDetailData, SchemeExplanationResponse } from '../services/api';
 import { SCHEMES } from '../data/schemes';
+import { useLanguage } from '../context/LanguageContext';
+import type { Language } from '../data/translations';
 
 interface SchemeDetailsProps {
   selectedScheme: Scheme | null;
@@ -18,7 +20,8 @@ export const SchemeDetails: React.FC<SchemeDetailsProps> = ({ selectedScheme }) 
 
   const activeId = schemeIdFromUrl || selectedScheme?.id || 'pm-kisan';
 
-  const [language, setLanguage] = useState<LanguageCode>('en');
+  // Connect to the global language context
+  const { language, setLanguage } = useLanguage();
   const [explainSimply, setExplainSimply] = useState(true);
   const [loading, setLoading] = useState(false);
   const [explanationData, setExplanationData] = useState<SchemeExplanationResponse | null>(null);
@@ -71,7 +74,13 @@ export const SchemeDetails: React.FC<SchemeDetailsProps> = ({ selectedScheme }) 
       whoCanGet: 'Who can get this?',
       requiredDocs: 'Required Documents',
       evaluatedParams: 'Evaluated Parameters',
-      applyNow: 'Visit Official Portal'
+      applyNow: 'Visit Official Portal',
+      description: 'Description',
+      howToApply: 'How to Apply',
+      appPortal: 'Application Portal',
+      appPortalDesc: 'Click below to open the official government website and complete your application.',
+      missingInfo: 'Missing Info:',
+      updatingDetails: 'Updating details representation...'
     },
     hi: {
       back: 'पात्र योजनाओं पर वापस जाएं',
@@ -83,7 +92,13 @@ export const SchemeDetails: React.FC<SchemeDetailsProps> = ({ selectedScheme }) 
       whoCanGet: 'यह किसे मिल सकता है?',
       requiredDocs: 'आवश्यक दस्तावेज',
       evaluatedParams: 'जांचे गए मानदंड',
-      applyNow: 'आधिकारिक पोर्टल पर जाएं'
+      applyNow: 'आधिकारिक पोर्टल पर जाएं',
+      description: 'विवरण',
+      howToApply: 'आवेदन कैसे करें',
+      appPortal: 'आवेदन पोर्टल',
+      appPortalDesc: 'अपना आवेदन पूरा करने के लिए आधिकारिक सरकारी वेबसाइट खोलने के लिए नीचे क्लिक करें।',
+      missingInfo: 'लापता जानकारी:',
+      updatingDetails: 'विवरण अद्यतन किया जा रहा है...'
     },
     or: {
       back: 'ଯୋଗ୍ୟ ଯୋଜନାକୁ ଫେରିଯାଆନ୍ତୁ',
@@ -95,9 +110,32 @@ export const SchemeDetails: React.FC<SchemeDetailsProps> = ({ selectedScheme }) 
       whoCanGet: 'ଏହା କାହାକୁ ମିଳିପାରିବ?',
       requiredDocs: 'ଆବଶ୍ୟକୀୟ ଦସ୍ତାବେଜ',
       evaluatedParams: 'ଯାଞ୍ଚ ହୋଇଥିବା ମାପଦଣ୍ଡ',
-      applyNow: 'ଆଧିକାରିକ ପୋର୍ଟାଲ ଯାଆନ୍ତୁ'
+      applyNow: 'ଆଧିକାରିକ ପୋର୍ଟାଲ ଯାଆନ୍ତୁ',
+      description: 'ବିବରଣୀ',
+      howToApply: 'କିପରି ଆବେଦନ କରିବେ',
+      appPortal: 'ଆବେଦନ ପୋର୍ଟାଲ',
+      appPortalDesc: 'ଆପଣଙ୍କର ଆବେଦନ ସମ୍ପୂର୍ଣ୍ଣ କରିବାକୁ ସରକାରୀ ଆଧିକାରିକ ୱେବସାଇଟ୍ ଖୋଲିବା ପାଇଁ ତଳେ କ୍ଲିକ୍ କରନ୍ତୁ |',
+      missingInfo: 'ଅସମ୍ପୂର୍ଣ୍ଣ ତଥ୍ୟ:',
+      updatingDetails: 'ତଥ୍ୟ ଅପଡେଟ୍ ହେଉଛି...'
     }
-  }[language];
+  }[language as Language] || {
+    back: 'Back to eligible schemes',
+    explainSimply: 'Explain Simply',
+    explainDesc: 'Switch to a friendly, easy-to-understand explanation of this scheme.',
+    simpleTitle: 'The Simple Version',
+    officialTitle: 'Official Information',
+    howToGet: 'How do you get it?',
+    whoCanGet: 'Who can get this?',
+    requiredDocs: 'Required Documents',
+    evaluatedParams: 'Evaluated Parameters',
+    applyNow: 'Visit Official Portal',
+    description: 'Description',
+    howToApply: 'How to Apply',
+    appPortal: 'Application Portal',
+    appPortalDesc: 'Click below to open the official government website and complete your application.',
+    missingInfo: 'Missing Info:',
+    updatingDetails: 'Updating details representation...'
+  };
 
   const handleBack = () => {
     navigate('/schemes');
@@ -125,7 +163,7 @@ export const SchemeDetails: React.FC<SchemeDetailsProps> = ({ selectedScheme }) 
         {/* Header Title with Language Selector */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-stack-md border-b border-outline-variant/30 pb-4">
           <div>
-            <span className="bg-primary/10 text-primary text-xs font-bold px-3 py-1 rounded-full mb-2 inline-block opacity-85 font-bold uppercase tracking-wider">
+            <span className="bg-primary/10 text-primary text-xs font-bold px-3 py-1 rounded-full mb-2 inline-block opacity-85 uppercase tracking-wider">
               {category}
             </span>
             <h1 className="text-2xl md:text-3xl font-extrabold text-on-surface">
@@ -193,7 +231,7 @@ export const SchemeDetails: React.FC<SchemeDetailsProps> = ({ selectedScheme }) 
         {loading ? (
           <div className="py-20 flex flex-col items-center justify-center gap-4 text-center">
             <span className="material-symbols-outlined text-4xl text-primary animate-spin">sync</span>
-            <p className="text-on-surface-variant font-medium">Updating details representation...</p>
+            <p className="text-on-surface-variant font-medium">{labels.updatingDetails}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -229,7 +267,7 @@ export const SchemeDetails: React.FC<SchemeDetailsProps> = ({ selectedScheme }) 
                       </p>
                       {explanationData.missing_information && explanationData.missing_information.length > 0 && (
                         <div className="mt-3 bg-amber-500/10 border border-amber-500/20 p-3 rounded-lg text-xs text-amber-800 dark:text-amber-300">
-                          <strong>Missing Info:</strong> {explanationData.missing_information.join(', ')}
+                          <strong>{labels.missingInfo}</strong> {explanationData.missing_information.join(', ')}
                         </div>
                       )}
                     </div>
@@ -245,7 +283,7 @@ export const SchemeDetails: React.FC<SchemeDetailsProps> = ({ selectedScheme }) 
                   
                   <div className="space-y-6 text-on-surface">
                     <section>
-                      <h3 className="font-bold text-base mb-2">Description</h3>
+                      <h3 className="font-bold text-base mb-2">{labels.description}</h3>
                       <p className="text-sm text-on-surface-variant leading-relaxed">
                         {criteriaText}
                       </p>
@@ -270,7 +308,7 @@ export const SchemeDetails: React.FC<SchemeDetailsProps> = ({ selectedScheme }) 
                     )}
 
                     <section className="bg-surface-container-low p-5 rounded-xl border border-outline-variant/20">
-                      <h3 className="font-bold text-base mb-2">How to Apply</h3>
+                      <h3 className="font-bold text-base mb-2">{labels.howToApply}</h3>
                       <p className="text-sm text-on-surface-variant leading-relaxed">
                         {applicationInfo}
                       </p>
@@ -284,9 +322,9 @@ export const SchemeDetails: React.FC<SchemeDetailsProps> = ({ selectedScheme }) 
             {/* Sidebar Controls Card */}
             <div className="lg:col-span-4 space-y-6">
               <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-2xl p-6 shadow-natural-bloom space-y-4">
-                <h3 className="font-bold text-lg text-on-surface">Application Portal</h3>
+                <h3 className="font-bold text-lg text-on-surface">{labels.appPortal}</h3>
                 <p className="text-xs text-on-surface-variant leading-relaxed">
-                  Click below to open the official government website and complete your application.
+                  {labels.appPortalDesc}
                 </p>
                 <button
                   onClick={handleOfficialPortalClick}

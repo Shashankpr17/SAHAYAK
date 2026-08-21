@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useLanguage } from '../context/LanguageContext';
 
 interface HeaderProps {
   minimal?: boolean;
@@ -8,10 +9,25 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ minimal = false }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
+  
+  const { language, setLanguage, t } = useLanguage();
+  const [langDropdownOpen, setLangDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const isAuthenticated = !!localStorage.getItem('sahayak_token');
   const userJson = localStorage.getItem('sahayak_user');
   const user = userJson ? JSON.parse(userJson) : null;
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setLangDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleScrollTo = (elementId: string) => {
     if (window.location.pathname !== '/') {
@@ -51,7 +67,7 @@ export const Header: React.FC<HeaderProps> = ({ minimal = false }) => {
             className="h-8 w-auto inline-block mr-2"
             src="https://lh3.googleusercontent.com/aida/AP1WRLvpacausV289CU9wbrAYrstiDM35Kyo3CN87nc0Gfp9QY6gCcaDsTwNN38c2XVpFb3M_Jo-2Q7X6F_PGpFFIQlNoAT6K__6BF0CC75k77cjCypZ8sT9rrrz5SCSLArQfME1daiSxtGedJHV8a4je-_Rl7MFHVYiJxNk2HfcuBI08dSB0ehcXIkoxj-ad4b8fAEAOrhtH1VJcwRo1gBdQHAQgjWVS-TO9srGotOFfch7SrmaMgOELW0S3v8"
           />
-          SAHAYAK
+          {t("logo")}
         </Link>
 
         {!minimal && (
@@ -61,17 +77,53 @@ export const Header: React.FC<HeaderProps> = ({ minimal = false }) => {
                 onClick={() => handleScrollTo('how-it-works')}
                 className="font-label-md text-label-md text-on-surface-variant dark:text-outline-variant hover:text-primary dark:hover:text-primary-fixed transition-colors duration-200"
               >
-                How it Works
+                {t("how_it_works")}
               </button>
               <button
                 onClick={() => handleScrollTo('features')}
                 className="font-label-md text-label-md text-on-surface-variant dark:text-outline-variant hover:text-primary dark:hover:text-primary-fixed transition-colors duration-200"
               >
-                Features
+                {t("features")}
               </button>
-              <span className="font-label-md text-label-md text-on-surface-variant dark:text-outline-variant cursor-not-allowed opacity-50 mr-2">
-                Languages
-              </span>
+              
+              {/* Language Selector Dropdown */}
+              <div className="relative mr-2" ref={dropdownRef}>
+                <button
+                  onClick={() => setLangDropdownOpen(!langDropdownOpen)}
+                  className="font-label-md text-label-md text-on-surface-variant dark:text-outline-variant hover:text-primary dark:hover:text-primary-fixed transition-colors duration-200 flex items-center gap-1 bg-surface-container-low hover:bg-surface-container-high px-3 py-1.5 rounded-lg border border-outline-variant/30"
+                  aria-haspopup="true"
+                  aria-expanded={langDropdownOpen}
+                >
+                  <span className="material-symbols-outlined text-sm">language</span>
+                  <span>{language === 'en' ? 'English' : language === 'hi' ? 'हिन्दी' : 'ଓଡ଼ିଆ'}</span>
+                  <span className="material-symbols-outlined text-sm transition-transform duration-200" style={{ transform: langDropdownOpen ? 'rotate(180deg)' : 'none' }}>
+                    arrow_drop_down
+                  </span>
+                </button>
+
+                {langDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-40 bg-surface dark:bg-on-surface border border-outline-variant rounded-xl shadow-natural-bloom py-1.5 z-[100] animate-in fade-in slide-in-from-top-2 duration-150">
+                    <button
+                      onClick={() => { setLanguage('en'); setLangDropdownOpen(false); }}
+                      className={`w-full text-left px-4 py-2 font-label-md text-sm hover:bg-surface-container-high transition-colors ${language === 'en' ? 'text-primary font-bold bg-primary/5' : 'text-on-surface-variant'}`}
+                    >
+                      English
+                    </button>
+                    <button
+                      onClick={() => { setLanguage('hi'); setLangDropdownOpen(false); }}
+                      className={`w-full text-left px-4 py-2 font-label-md text-sm hover:bg-surface-container-high transition-colors ${language === 'hi' ? 'text-primary font-bold bg-primary/5' : 'text-on-surface-variant'}`}
+                    >
+                      हिन्दी
+                    </button>
+                    <button
+                      onClick={() => { setLanguage('or'); setLangDropdownOpen(false); }}
+                      className={`w-full text-left px-4 py-2 font-label-md text-sm hover:bg-surface-container-high transition-colors ${language === 'or' ? 'text-primary font-bold bg-primary/5' : 'text-on-surface-variant'}`}
+                    >
+                      ଓଡ଼ିଆ
+                    </button>
+                  </div>
+                )}
+              </div>
 
               {isAuthenticated && user && (
                 <div className="flex items-center gap-3 border-l border-outline-variant/30 pl-4">
@@ -97,7 +149,7 @@ export const Header: React.FC<HeaderProps> = ({ minimal = false }) => {
                     onClick={handleLogout}
                     className="ml-2 font-label-md text-xs bg-surface-container-high hover:bg-surface-container-highest text-on-surface px-3 py-1.5 rounded-md border border-outline-variant transition-colors"
                   >
-                    Logout
+                    {t("logout")}
                   </button>
                 </div>
               )}
@@ -123,7 +175,7 @@ export const Header: React.FC<HeaderProps> = ({ minimal = false }) => {
             }}
             className="text-left font-label-md text-label-md text-on-surface-variant dark:text-outline-variant hover:text-primary py-2"
           >
-            How it Works
+            {t("how_it_works")}
           </button>
           <button
             onClick={() => {
@@ -132,8 +184,36 @@ export const Header: React.FC<HeaderProps> = ({ minimal = false }) => {
             }}
             className="text-left font-label-md text-label-md text-on-surface-variant dark:text-outline-variant hover:text-primary py-2"
           >
-            Features
+            {t("features")}
           </button>
+
+          {/* Mobile Language Selector */}
+          <div className="flex flex-col gap-2 border-t border-outline-variant/30 pt-3">
+            <span className="text-xs text-on-surface-variant font-medium flex items-center gap-1">
+              <span className="material-symbols-outlined text-xs">language</span>
+              {t("languages")}
+            </span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setLanguage('en'); setMobileMenuOpen(false); }}
+                className={`px-3 py-1.5 rounded-lg border text-xs font-semibold ${language === 'en' ? 'bg-primary text-on-primary border-primary' : 'bg-surface-container-low text-on-surface-variant border-outline-variant/30'}`}
+              >
+                English
+              </button>
+              <button
+                onClick={() => { setLanguage('hi'); setMobileMenuOpen(false); }}
+                className={`px-3 py-1.5 rounded-lg border text-xs font-semibold ${language === 'hi' ? 'bg-primary text-on-primary border-primary' : 'bg-surface-container-low text-on-surface-variant border-outline-variant/30'}`}
+              >
+                हिन्दी
+              </button>
+              <button
+                onClick={() => { setLanguage('or'); setMobileMenuOpen(false); }}
+                className={`px-3 py-1.5 rounded-lg border text-xs font-semibold ${language === 'or' ? 'bg-primary text-on-primary border-primary' : 'bg-surface-container-low text-on-surface-variant border-outline-variant/30'}`}
+              >
+                ଓଡ଼ିଆ
+              </button>
+            </div>
+          </div>
 
           {isAuthenticated && user && (
             <div className="border-t border-surface-container pt-4 flex flex-col gap-3">
@@ -157,7 +237,7 @@ export const Header: React.FC<HeaderProps> = ({ minimal = false }) => {
                 }}
                 className="font-label-md text-label-md bg-surface-container-high hover:bg-surface-container-highest text-on-surface py-2 rounded-lg text-center font-bold border border-outline-variant"
               >
-                Logout
+                {t("logout")}
               </button>
             </div>
           )}

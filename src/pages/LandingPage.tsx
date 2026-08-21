@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
+import { useLanguage } from '../context/LanguageContext';
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('sahayak_token'));
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
@@ -17,7 +19,6 @@ export const LandingPage: React.FC = () => {
     script.async = true;
     script.defer = true;
     script.onload = () => {
-      // Use configured OAuth Client ID from Vite env (fallback to standard google apps sub identifier)
       const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '2149112259-o2tc61qg5iquupqtmcrkaklnpe85atm3.apps.googleusercontent.com';
       
       try {
@@ -130,10 +131,10 @@ export const LandingPage: React.FC = () => {
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-gutter items-center min-h-[500px] lg:min-h-[600px]">
           <div className="flex flex-col gap-stack-lg max-w-2xl">
             <h1 className="font-display-lg text-4xl md:text-display-lg text-on-surface tracking-tight leading-tight">
-              Government paperwork, <span className="text-primary font-bold">made simple.</span>
+              {t("hero_title_1")} <span className="text-primary font-bold">{t("hero_title_2")}</span>
             </h1>
             <p className="font-body-lg text-lg md:text-body-lg text-on-surface-variant leading-relaxed">
-              Upload your documents once. Discover government schemes you may be eligible for and understand every step in simple language.
+              {t("hero_desc")}
             </p>
             <div className="flex flex-wrap gap-4 items-center pt-2">
               {isAuthenticated ? (
@@ -142,7 +143,7 @@ export const LandingPage: React.FC = () => {
                     onClick={handleGetStarted}
                     className="font-label-md text-label-md bg-primary-container text-on-primary-container px-6 py-3 rounded-lg hover:shadow-floating transition-all font-bold"
                   >
-                    Go to Dashboard
+                    {t("go_to_dashboard")}
                   </button>
                   <button
                     onClick={() => {
@@ -155,7 +156,7 @@ export const LandingPage: React.FC = () => {
                     }}
                     className="font-label-md text-label-md bg-transparent border border-outline-variant text-on-surface px-6 py-3 rounded-lg hover:bg-surface-container-low transition-colors"
                   >
-                    Logout
+                    {t("logout")}
                   </button>
                 </>
               ) : (
@@ -165,7 +166,7 @@ export const LandingPage: React.FC = () => {
                 onClick={() => handleScrollTo('how-it-works')}
                 className="font-label-md text-label-md bg-transparent border border-outline-variant text-on-surface px-6 py-3 rounded-lg hover:bg-surface-container-low transition-colors"
               >
-                How It Works
+                {t("how_it_works")}
               </button>
             </div>
           </div>
@@ -183,7 +184,7 @@ export const LandingPage: React.FC = () => {
         {/* How it Works / Features Section */}
         <section id="features" className="flex flex-col gap-stack-lg pt-12">
           <div className="text-center max-w-3xl mx-auto mb-12">
-            <h2 className="font-headline-lg text-3xl md:text-headline-lg text-on-surface">Everything you need, in one place.</h2>
+            <h2 className="font-headline-lg text-3xl md:text-headline-lg text-on-surface">{t("features_title")}</h2>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-gutter">
@@ -195,9 +196,9 @@ export const LandingPage: React.FC = () => {
               <div className="w-12 h-12 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container mb-2 shrink-0">
                 <span className="material-symbols-outlined">document_scanner</span>
               </div>
-              <h3 className="font-title-lg text-title-lg text-on-surface font-semibold">Upload Documents</h3>
+              <h3 className="font-title-lg text-title-lg text-on-surface font-semibold">{t("feature_1_title")}</h3>
               <p className="font-body-md text-body-md text-on-surface-variant">
-                Extract important information automatically. Simply take a photo of your ID or forms, and we'll handle the data entry securely.
+                {t("feature_1_desc")}
               </p>
             </div>
             
@@ -209,9 +210,9 @@ export const LandingPage: React.FC = () => {
               <div className="w-12 h-12 rounded-full bg-tertiary-container flex items-center justify-center text-on-tertiary-container mb-2 shrink-0">
                 <span className="material-symbols-outlined">verified_user</span>
               </div>
-              <h3 className="font-title-lg text-title-lg text-on-surface font-semibold">Check Eligibility</h3>
+              <h3 className="font-title-lg text-title-lg text-on-surface font-semibold">{t("feature_2_title")}</h3>
               <p className="font-body-md text-body-md text-on-surface-variant">
-                Discover government schemes based on your profile instantly. Our smart engine matches your details against hundreds of active programs.
+                {t("feature_2_desc")}
               </p>
             </div>
             
@@ -223,9 +224,9 @@ export const LandingPage: React.FC = () => {
               <div className="w-12 h-12 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container mb-2 shrink-0">
                 <span className="material-symbols-outlined">translate</span>
               </div>
-              <h3 className="font-title-lg text-title-lg text-on-surface font-semibold">Understand Simply</h3>
+              <h3 className="font-title-lg text-title-lg text-on-surface font-semibold">{t("feature_3_title")}</h3>
               <p className="font-body-md text-body-md text-on-surface-variant">
-                Get complicated information explained in your preferred language. Bureaucratic jargon translated into plain, actionable advice.
+                {t("feature_3_desc")}
               </p>
             </div>
           </div>
@@ -234,29 +235,29 @@ export const LandingPage: React.FC = () => {
         {/* How It Works Explainer Block */}
         <section id="how-it-works" className="bg-surface-container-low rounded-2xl p-8 md:p-12 border border-surface-variant/30 flex flex-col gap-8">
           <div>
-            <h2 className="font-headline-lg text-2xl md:text-headline-lg text-on-surface font-semibold mb-2">How It Works</h2>
-            <p className="font-body-md text-body-md text-on-surface-variant">Three simple steps to secure your government benefits.</p>
+            <h2 className="font-headline-lg text-2xl md:text-headline-lg text-on-surface font-semibold mb-2">{t("how_it_works_title")}</h2>
+            <p className="font-body-md text-body-md text-on-surface-variant">{t("how_it_works_desc")}</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="flex gap-4">
               <div className="w-10 h-10 rounded-full bg-primary text-on-primary font-bold flex items-center justify-center shrink-0">1</div>
               <div>
-                <h4 className="font-title-lg text-title-lg text-on-surface font-semibold mb-1">Upload ID or Certificate</h4>
-                <p className="font-body-md text-sm text-on-surface-variant">Drag and drop your document. Our system parses key fields automatically.</p>
+                <h4 className="font-title-lg text-title-lg text-on-surface font-semibold mb-1">{t("step_1_title")}</h4>
+                <p className="font-body-md text-sm text-on-surface-variant">{t("step_1_desc")}</p>
               </div>
             </div>
             <div className="flex gap-4">
               <div className="w-10 h-10 rounded-full bg-primary text-on-primary font-bold flex items-center justify-center shrink-0">2</div>
               <div>
-                <h4 className="font-title-lg text-title-lg text-on-surface font-semibold mb-1">Review & Confirm Profile</h4>
-                <p className="font-body-md text-sm text-on-surface-variant">Correct any parsed text to make sure your name, state, and income are right.</p>
+                <h4 className="font-title-lg text-title-lg text-on-surface font-semibold mb-1">{t("step_2_title")}</h4>
+                <p className="font-body-md text-sm text-on-surface-variant">{t("step_2_desc")}</p>
               </div>
             </div>
             <div className="flex gap-4">
               <div className="w-10 h-10 rounded-full bg-primary text-on-primary font-bold flex items-center justify-center shrink-0">3</div>
               <div>
-                <h4 className="font-title-lg text-title-lg text-on-surface font-semibold mb-1">Browse Matches</h4>
-                <p className="font-body-md text-sm text-on-surface-variant">Instantly view matched schemes with simple explanations in Hindi or English.</p>
+                <h4 className="font-title-lg text-title-lg text-on-surface font-semibold mb-1">{t("step_3_title")}</h4>
+                <p className="font-body-md text-sm text-on-surface-variant">{t("step_3_desc")}</p>
               </div>
             </div>
           </div>
@@ -268,7 +269,7 @@ export const LandingPage: React.FC = () => {
       {isLoggingIn && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[100] flex flex-col items-center justify-center gap-4">
           <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-          <p className="font-label-lg text-lg text-primary animate-pulse">Checking your SAHAYAK profile...</p>
+          <p className="font-label-lg text-lg text-primary animate-pulse">{t("checking_profile")}</p>
         </div>
       )}
     </div>

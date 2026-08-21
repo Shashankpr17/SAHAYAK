@@ -5,6 +5,7 @@ import { Footer } from '../components/Footer';
 import type { UserProfile } from '../types';
 import { getProfile, updateProfile, saveVerifiedProfile } from '../services/api';
 import { validateName, cleanName, validateDOB, normalizeDOB, validateIndianState, validateAddress } from './ProcessingDocuments';
+import { useLanguage } from '../context/LanguageContext';
 
 interface ReviewDetailsProps {
   profile: UserProfile | null;
@@ -13,6 +14,7 @@ interface ReviewDetailsProps {
 
 export const ReviewDetails: React.FC<ReviewDetailsProps> = ({ profile, onProfileUpdated }) => {
   const navigate = useNavigate();
+  const { t, language } = useLanguage();
   
   // Local form state
   const [fullName, setFullName] = useState('');
@@ -172,10 +174,22 @@ export const ReviewDetails: React.FC<ReviewDetailsProps> = ({ profile, onProfile
     }
 
     if (isDobConfidenceLow) {
-      setNoticeMessage("DOB could not be confidently extracted. Please review and enter it manually.");
+      setNoticeMessage(
+        language === 'en' 
+          ? "DOB could not be confidently extracted. Please review and enter it manually." 
+          : language === 'hi' 
+            ? "जन्म तिथि विश्वास के साथ नहीं निकाली जा सकी। कृपया समीक्षा करें और इसे मैन्युअल रूप से दर्ज करें।" 
+            : "ଜନ୍ମ ତାରିଖ ସଠିକ୍ ଭାବେ ବାହାର କରିହେଲାନାହିଁ | ଦୟାକରି ଯାଞ୍ଚ କରି ନିଜେ ଲେଖନ୍ତୁ |"
+      );
       setNoticeType('warning');
     } else if (successStr === 'false') {
-      setNoticeMessage("We couldn't confidently extract all details. Please enter or edit them manually.");
+      setNoticeMessage(
+        language === 'en' 
+          ? "We couldn't confidently extract all details. Please enter or edit them manually." 
+          : language === 'hi' 
+            ? "हम सभी विवरण विश्वास के साथ नहीं निकाल पाए। कृपया उन्हें मैन्युअल रूप से दर्ज करें या सुधारें।" 
+            : "ଆମେ ସମସ୍ତ ବିବରଣୀ ସଠିକ୍ ଭାବେ ବାହାର କରିପାରିଲୁ ନାହିଁ | ଦୟାକରି ଯାଞ୍ଚ କରନ୍ତୁ କିମ୍ବା ନିଜେ ସଂଶୋଧନ କରନ୍ତୁ |"
+      );
       setNoticeType('warning');
     } else if (confidenceJson) {
       try {
@@ -184,7 +198,6 @@ export const ReviewDetails: React.FC<ReviewDetailsProps> = ({ profile, onProfile
         for (const key of Object.keys(confData)) {
           const item = confData[key];
           if (item) {
-            // Check confidence ratings
             if (item.confidence === 'low' || (typeof item.confidence === 'number' && item.confidence < 60)) {
               hasLowConfidence = true;
               break;
@@ -192,21 +205,21 @@ export const ReviewDetails: React.FC<ReviewDetailsProps> = ({ profile, onProfile
           }
         }
         if (hasLowConfidence) {
-          setNoticeMessage("Some details could not be confidently extracted. Please review and edit them.");
+          setNoticeMessage(t("uncertain_warning"));
           setNoticeType('info');
         }
       } catch (err) {
         console.error("Failed to parse confidence data:", err);
       }
     }
-  }, [profile]);
+  }, [profile, language]);
 
   const handleSaveChanges = async () => {
     const newErrors: { [key: string]: string } = {};
-    if (!fullName.trim()) newErrors.fullName = 'Full Name is required.';
-    if (!dob.trim()) newErrors.dob = 'Date of Birth is required.';
-    if (!state.trim()) newErrors.state = 'State is required.';
-    if (!address.trim()) newErrors.address = 'Address is required.';
+    if (!fullName.trim()) newErrors.fullName = language === 'en' ? 'Full Name is required.' : language === 'hi' ? 'पूरा नाम आवश्यक है।' : 'ସମ୍ପୂର୍ଣ୍ଣ ନାମ ଆବଶ୍ୟକ |';
+    if (!dob.trim()) newErrors.dob = language === 'en' ? 'Date of Birth is required.' : language === 'hi' ? 'जन्म तिथि आवश्यक है।' : 'ଜନ୍ମ ତାରିଖ ଆବଶ୍ୟକ |';
+    if (!state.trim()) newErrors.state = language === 'en' ? 'State is required.' : language === 'hi' ? 'राज्य आवश्यक है।' : 'ରାଜ୍ୟ ଆବଶ୍ୟକ |';
+    if (!address.trim()) newErrors.address = language === 'en' ? 'Address is required.' : language === 'hi' ? 'पता आवश्यक है।' : 'ଠିକଣା ଆବଶ୍ୟକ |';
 
     if (Object.keys(newErrors).length > 0) {
       setValidationErrors(newErrors);
@@ -286,48 +299,24 @@ export const ReviewDetails: React.FC<ReviewDetailsProps> = ({ profile, onProfile
 
   const handleConfirm = async (e: React.FormEvent) => {
     e.preventDefault();
-
     setValidationErrors({});
     
-    // Inline validation for required fields
     const newErrors: { [key: string]: string } = {};
-    if (!fullName.trim()) newErrors.fullName = 'Full Name is required.';
-    if (!dob.trim()) newErrors.dob = 'Date of Birth is required.';
-    if (!state.trim()) newErrors.state = 'State is required.';
-    if (!address.trim()) newErrors.address = 'Address is required.';
+    if (!fullName.trim()) newErrors.fullName = language === 'en' ? 'Full Name is required.' : language === 'hi' ? 'पूरा नाम आवश्यक है।' : 'ସମ୍ପୂର୍ଣ୍ଣ ନାମ ଆବଶ୍ୟକ |';
+    if (!dob.trim()) newErrors.dob = language === 'en' ? 'Date of Birth is required.' : language === 'hi' ? 'जन्म तिथि आवश्यक है।' : 'ଜନ୍ମ ତାରିଖ ଆବଶ୍ୟକ |';
+    if (!state.trim()) newErrors.state = language === 'en' ? 'State is required.' : language === 'hi' ? 'राज्य आवश्यक है।' : 'ରାଜ୍ୟ ଆବଶ୍ୟକ |';
+    if (!address.trim()) newErrors.address = language === 'en' ? 'Address is required.' : language === 'hi' ? 'पता आवश्यक है।' : 'ଠିକଣା ଆବଶ୍ୟକ |';
 
     if (Object.keys(newErrors).length > 0) {
       setValidationErrors(newErrors);
       return;
     }
 
-    const updated: UserProfile = {
-      fullName,
-      dob,
-      state,
-      address,
-      annualIncome,
-      occupation,
-      gender,
-      fatherName,
-      motherName,
-      bloodGroup,
-      aadhaarNumber,
-      panNumber,
-      drivingLicenceNumber,
-      voterIdNumber,
-      district,
-      pinCode
-    };
-
     setIsSaving(true);
     setSaveError(null);
-    setIsEditing(false);
-
-    // 1. Save verified profile to backend POST /profile
     try {
-      console.log('[DATA FLOW] Saving verified profile to POST /profile:', updated);
-      await saveVerifiedProfile({
+      console.log(`[DATA FLOW] Confirming profile details and saving to verified profile schema`);
+      const payload = {
         full_name: fullName,
         date_of_birth: dob,
         state: state,
@@ -344,67 +333,67 @@ export const ReviewDetails: React.FC<ReviewDetailsProps> = ({ profile, onProfile
         voter_id_number: voterIdNumber,
         district: district,
         pin_code: pinCode
-      });
+      };
+
+      const res = await saveVerifiedProfile(payload);
+      console.log(`[DATA FLOW] saveVerifiedProfile response:`, res);
+      
+      if (res.success) {
+        navigate('/schemes');
+      } else {
+        setSaveError(res.detail || res.message || 'Failed to save verified profile details.');
+      }
     } catch (err: any) {
-      console.error('[DATA FLOW ERROR] POST /profile failed:', err);
-      setSaveError(err.message || 'Failed to save verified profile. Please try again.');
+      console.error('Error saving profile:', err);
+      setSaveError(err.message || 'An error occurred while saving the profile.');
+    } finally {
       setIsSaving(false);
-      return; // Stop navigation!
     }
-
-    // 2. Concurrently update backend GET/PUT endpoint for completeness
-    try {
-      await updateProfile({
-        full_name: fullName,
-        date_of_birth: dob,
-        state: state,
-        address: address,
-        annual_income: annualIncome,
-        occupation: occupation,
-        gender: gender,
-        father_name: fatherName,
-        mother_name: motherName,
-        blood_group: bloodGroup,
-        aadhaar_number: aadhaarNumber,
-        pan_number: panNumber,
-        driving_licence_number: drivingLicenceNumber,
-        voter_id_number: voterIdNumber,
-        district: district,
-        pin_code: pinCode
-      });
-    } catch (err) {
-      console.warn('[DATA FLOW WARNING] Backend PUT /api/profile sync failed:', err);
-    }
-
-    setIsSaving(false);
-    localStorage.setItem('sahayak_user_profile', JSON.stringify(updated));
-    onProfileUpdated(updated);
-    navigate('/schemes');
   };
 
   const handleBack = () => {
     navigate('/upload');
   };
 
+  const getMaskedVal = (val: string, show: boolean, placeholder: string = 'Not available') => {
+    if (!val) return language === 'en' ? placeholder : language === 'hi' ? 'उपलब्ध नहीं' : 'ଉପଲବ୍ଧ ନାହିଁ';
+    if (show) return val;
+    // Mask sensitive digits
+    const digits = val.replace(/\D/g, '');
+    if (digits.length <= 4) return val;
+    const visible = digits.slice(-4);
+    const masked = 'X'.repeat(digits.length - 4);
+    
+    // Format Aadhaar Style: XXXX XXXX 1234
+    if (digits.length === 12) {
+      return `XXXX XXXX ${visible}`;
+    }
+    return `${masked}${visible}`;
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background text-on-surface">
       <Header />
 
-      <main className="flex-grow py-12 px-4 md:px-margin-desktop w-full">
-        <div className="max-w-[720px] mx-auto">
+      <main className="flex-grow max-w-container-max mx-auto w-full px-4 md:px-margin-desktop py-10 flex flex-col items-center">
+        <div className="w-full max-w-3xl flex flex-col gap-6">
           
-          {/* Header Section */}
-          <div className="text-center mb-10">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-tertiary-fixed mb-4">
-              <span className="material-symbols-outlined text-on-tertiary-fixed-variant" style={{ fontVariationSettings: "'FILL' 1" }}>
+          {/* Header Block */}
+          <div className="text-center space-y-2 mb-4">
+            <div className="w-16 h-16 bg-primary-container text-on-primary-container rounded-full flex items-center justify-center mx-auto mb-2">
+              <span className="material-symbols-outlined text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>
                 task_alt
               </span>
             </div>
             <h1 className="font-display-lg text-3xl md:text-display-lg text-on-surface mb-stack-sm tracking-tight font-semibold">
-              Please review your details
+              {language === 'en' ? 'Please review your details' : language === 'hi' ? 'कृपया अपने विवरण की समीक्षा करें' : 'ଦୟାକରି ଆପଣଙ୍କ ବିବରଣୀ ସମୀକ୍ଷା କରନ୍ତୁ'}
             </h1>
             <p className="font-body-lg text-body-lg text-on-surface-variant max-w-lg mx-auto">
-              We found this information in your document. Please check that everything is correct.
+              {language === 'en' 
+                ? 'We found this information in your document. Please check that everything is correct.' 
+                : language === 'hi' 
+                  ? 'हमें आपके दस्तावेज़ में यह जानकारी मिली है। कृपया जांचें कि सब कुछ सही है।' 
+                  : 'ଆମେ ଆପଣଙ୍କ ଦସ୍ତାବିଜରେ ଏହି ସୂଚନା ପାଇଛୁ | ଦୟାକରି ସମସ୍ତ ତଥ୍ୟ ଯାଞ୍ଚ କରନ୍ତୁ |'}
             </p>
           </div>
 
@@ -422,7 +411,7 @@ export const ReviewDetails: React.FC<ReviewDetailsProps> = ({ profile, onProfile
           )}
 
           {/* Form Card */}
-          <div className="bg-surface-container-lowest rounded-xl p-6 md:p-10 bloom-shadow border border-outline-variant/30">
+          <div className="bg-surface-container-lowest rounded-xl p-6 md:p-10 border border-outline-variant/30 shadow-sm">
             {isEditing ? (
               <div className="flex justify-end gap-3 mb-6 animate-fade-in">
                 <button 
@@ -431,7 +420,7 @@ export const ReviewDetails: React.FC<ReviewDetailsProps> = ({ profile, onProfile
                   className="inline-flex items-center gap-1.5 px-4 py-2 border border-outline text-on-surface rounded-full font-label-md text-xs hover:bg-surface-container-low transition-colors font-bold shadow-sm"
                 >
                   <span className="material-symbols-outlined text-[16px]">close</span>
-                  Cancel
+                  {language === 'en' ? 'Cancel' : language === 'hi' ? 'रद्द करें' : 'ବାତିଲ୍ କରନ୍ତୁ'}
                 </button>
                 <button 
                   type="button"
@@ -439,7 +428,7 @@ export const ReviewDetails: React.FC<ReviewDetailsProps> = ({ profile, onProfile
                   className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary text-on-primary rounded-full font-label-md text-xs hover:bg-primary-hover shadow-sm transition-colors font-bold"
                 >
                   <span className="material-symbols-outlined text-[16px]">save</span>
-                  Save Changes
+                  {language === 'en' ? 'Save Changes' : language === 'hi' ? 'परिवर्तन सुरक्षित करें' : 'ପରିବର୍ତ୍ତନ ସଂରକ୍ଷଣ କରନ୍ତୁ'}
                 </button>
               </div>
             ) : (
@@ -470,7 +459,7 @@ export const ReviewDetails: React.FC<ReviewDetailsProps> = ({ profile, onProfile
                   className="inline-flex items-center gap-2 text-primary font-label-md text-label-md hover:text-primary/80 transition-colors font-semibold"
                 >
                   <span className="material-symbols-outlined text-[20px]">edit</span>
-                  Edit Details
+                  {language === 'en' ? 'Edit Details' : language === 'hi' ? 'विवरण संपादित करें' : 'ବିବରଣୀ ସଂଶୋଧନ କରନ୍ତୁ'}
                 </button>
               </div>
             )}
@@ -484,12 +473,12 @@ export const ReviewDetails: React.FC<ReviewDetailsProps> = ({ profile, onProfile
             <form onSubmit={handleConfirm}>
               {/* SECTION 1 — PERSONAL DETAILS */}
               <div className="col-span-1 md:col-span-2">
-                <h3 className="text-on-surface font-bold text-lg mb-4 border-b border-outline-variant pb-2">Personal Details</h3>
+                <h3 className="text-on-surface font-bold text-lg mb-4 border-b border-outline-variant pb-2">{t("sec_personal")}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Full Name */}
                   <div className="col-span-1 md:col-span-2">
                     <label className="block font-label-md text-label-md text-on-surface mb-unit font-semibold" htmlFor="fullName">
-                      Full Name
+                      {t("full_name")}
                     </label>
                     <div className="relative">
                       <span className="material-symbols-outlined absolute left-4 top-3 text-outline">person</span>
@@ -512,7 +501,7 @@ export const ReviewDetails: React.FC<ReviewDetailsProps> = ({ profile, onProfile
                   {/* Date of Birth */}
                   <div className="col-span-1">
                     <label className="block font-label-md text-label-md text-on-surface mb-unit font-semibold" htmlFor="dob">
-                      Date of Birth
+                      {t("date_of_birth")}
                     </label>
                     <div className="relative">
                       <span className="material-symbols-outlined absolute left-4 top-3 text-outline">calendar_month</span>
@@ -535,27 +524,40 @@ export const ReviewDetails: React.FC<ReviewDetailsProps> = ({ profile, onProfile
                   {/* Gender */}
                   <div className="col-span-1">
                     <label className="block font-label-md text-label-md text-on-surface mb-unit font-semibold" htmlFor="gender">
-                      Gender
+                      {t("gender")}
                     </label>
                     <div className="relative">
                       <span className="material-symbols-outlined absolute left-4 top-3 text-outline">wc</span>
-                      <input
-                        disabled={!isEditing}
-                        className={`w-full border rounded-lg pl-12 pr-4 py-3 font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all ${
-                          isEditing ? 'bg-white border-outline' : 'input-recessed border-transparent cursor-not-allowed'
-                        }`}
-                        id="gender"
-                        type="text"
-                        value={isEditing ? gender : (gender || 'Not available')}
-                        onChange={(e) => setGender(e.target.value)}
-                      />
+                      {isEditing ? (
+                        <select
+                          className="w-full border rounded-lg pl-12 pr-4 py-3 font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white border-outline"
+                          id="gender"
+                          value={gender}
+                          onChange={(e) => setGender(e.target.value)}
+                        >
+                          <option value="">{t("gender_placeholder")}</option>
+                          <option value="Male">{t("gender_male")}</option>
+                          <option value="Female">{t("gender_female")}</option>
+                          <option value="Transgender">{t("gender_other")}</option>
+                        </select>
+                      ) : (
+                        <input
+                          disabled
+                          className="w-full border rounded-lg pl-12 pr-4 py-3 font-body-md text-body-md text-on-surface border-transparent input-recessed cursor-not-allowed"
+                          id="gender"
+                          type="text"
+                          value={
+                            gender === 'Male' ? t('gender_male') : gender === 'Female' ? t('gender_female') : gender === 'Transgender' ? t('gender_other') : (gender || (language === 'en' ? 'Not available' : language === 'hi' ? 'उपलब्ध नहीं' : 'ଉପଲବ୍ଧ ନାହିଁ'))
+                          }
+                        />
+                      )}
                     </div>
                   </div>
 
                   {/* Father's Name */}
                   <div className="col-span-1">
                     <label className="block font-label-md text-label-md text-on-surface mb-unit font-semibold" htmlFor="fatherName">
-                      Father's Name
+                      {t("father_name")}
                     </label>
                     <div className="relative">
                       <span className="material-symbols-outlined absolute left-4 top-3 text-outline">family_restroom</span>
@@ -566,7 +568,7 @@ export const ReviewDetails: React.FC<ReviewDetailsProps> = ({ profile, onProfile
                         }`}
                         id="fatherName"
                         type="text"
-                        value={isEditing ? fatherName : (fatherName || 'Not available')}
+                        value={isEditing ? fatherName : (fatherName || (language === 'en' ? 'Not available' : language === 'hi' ? 'उपलब्ध नहीं' : 'ଉପଲବ୍ଧ ନାହିଁ'))}
                         onChange={(e) => setFatherName(e.target.value)}
                       />
                     </div>
@@ -575,7 +577,7 @@ export const ReviewDetails: React.FC<ReviewDetailsProps> = ({ profile, onProfile
                   {/* Mother's Name */}
                   <div className="col-span-1">
                     <label className="block font-label-md text-label-md text-on-surface mb-unit font-semibold" htmlFor="motherName">
-                      Mother's Name
+                      {t("mother_name")}
                     </label>
                     <div className="relative">
                       <span className="material-symbols-outlined absolute left-4 top-3 text-outline">woman</span>
@@ -586,7 +588,7 @@ export const ReviewDetails: React.FC<ReviewDetailsProps> = ({ profile, onProfile
                         }`}
                         id="motherName"
                         type="text"
-                        value={isEditing ? motherName : (motherName || 'Not available')}
+                        value={isEditing ? motherName : (motherName || (language === 'en' ? 'Not available' : language === 'hi' ? 'उपलब्ध नहीं' : 'ଉପଲବ୍ଧ ନାହିଁ'))}
                         onChange={(e) => setMotherName(e.target.value)}
                       />
                     </div>
@@ -595,7 +597,7 @@ export const ReviewDetails: React.FC<ReviewDetailsProps> = ({ profile, onProfile
                   {/* Blood Group */}
                   <div className="col-span-1">
                     <label className="block font-label-md text-label-md text-on-surface mb-unit font-semibold" htmlFor="bloodGroup">
-                      Blood Group
+                      {t("blood_group")}
                     </label>
                     <div className="relative">
                       <span className="material-symbols-outlined absolute left-4 top-3 text-outline">bloodtype</span>
@@ -606,7 +608,7 @@ export const ReviewDetails: React.FC<ReviewDetailsProps> = ({ profile, onProfile
                         }`}
                         id="bloodGroup"
                         type="text"
-                        value={isEditing ? bloodGroup : (bloodGroup || 'Not available')}
+                        value={isEditing ? bloodGroup : (bloodGroup || (language === 'en' ? 'Not available' : language === 'hi' ? 'उपलब्ध नहीं' : 'ଉପଲବ୍ଧ ନାହିଁ'))}
                         onChange={(e) => setBloodGroup(e.target.value)}
                       />
                     </div>
@@ -614,120 +616,116 @@ export const ReviewDetails: React.FC<ReviewDetailsProps> = ({ profile, onProfile
                 </div>
               </div>
 
-              {/* SECTION 2 — IDENTITY DETAILS */}
+              {/* SECTION 2 — IDENTITY INFORMATION */}
               <div className="col-span-1 md:col-span-2 pt-6 mt-4">
-                <h3 className="text-on-surface font-bold text-lg mb-4 border-b border-outline-variant pb-2">Identity Details</h3>
+                <div className="flex justify-between items-center mb-4 border-b border-outline-variant pb-2">
+                  <h3 className="text-on-surface font-bold text-lg">{t("sec_identity")}</h3>
+                  
+                  {/* Masking Toggle Control */}
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input 
+                      type="checkbox" 
+                      checked={!showAadhaar} 
+                      onChange={(e) => setShowAadhaar(!e.target.checked)}
+                      className="rounded border-outline text-primary focus:ring-primary"
+                    />
+                    <span className="text-xs text-on-surface-variant font-medium">
+                      {t("mask_aadhaar_check")}
+                    </span>
+                  </label>
+                </div>
+                
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Aadhaar Number */}
-                  {(isEditing || aadhaarNumber) && (
-                    <div className="col-span-1">
-                      <label className="block font-label-md text-label-md text-on-surface mb-unit font-semibold" htmlFor="aadhaarNumber">
-                        Aadhaar Number
-                      </label>
-                      <div className="relative flex items-center">
-                        <span className="material-symbols-outlined absolute left-4 top-3 text-outline">fingerprint</span>
-                        <input
-                          disabled={!isEditing}
-                          className={`w-full border rounded-lg pl-12 pr-12 py-3 font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all ${
-                            isEditing ? 'bg-white border-outline' : 'input-recessed border-transparent cursor-not-allowed'
-                          }`}
-                          id="aadhaarNumber"
-                          type={showAadhaar || isEditing ? 'text' : 'password'}
-                          value={isEditing ? aadhaarNumber : (aadhaarNumber ? (showAadhaar ? aadhaarNumber : `XXXX XXXX ${aadhaarNumber.replace(/\D/g, '').substring(8)}`) : 'Not available')}
-                          onChange={(e) => setAadhaarNumber(e.target.value)}
-                        />
-                        {!isEditing && aadhaarNumber && (
-                          <button
-                            type="button"
-                            onClick={() => setShowAadhaar(!showAadhaar)}
-                            className="absolute right-4 text-outline hover:text-primary transition-colors"
-                            title={showAadhaar ? "Hide Aadhaar" : "Show Aadhaar"}
-                          >
-                            <span className="material-symbols-outlined text-[20px]">
-                              {showAadhaar ? 'visibility_off' : 'visibility'}
-                            </span>
-                          </button>
-                        )}
-                      </div>
+                  <div className="col-span-1">
+                    <label className="block font-label-md text-label-md text-on-surface mb-unit font-semibold" htmlFor="aadhaar">
+                      {t("aadhaar_number")}
+                    </label>
+                    <div className="relative">
+                      <span className="material-symbols-outlined absolute left-4 top-3 text-outline">fingerprint</span>
+                      <input
+                        disabled={!isEditing}
+                        className={`w-full border rounded-lg pl-12 pr-4 py-3 font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all ${
+                          isEditing ? 'bg-white border-outline' : 'input-recessed border-transparent cursor-not-allowed'
+                        }`}
+                        id="aadhaar"
+                        type="text"
+                        value={isEditing ? aadhaarNumber : getMaskedVal(aadhaarNumber, showAadhaar)}
+                        onChange={(e) => setAadhaarNumber(e.target.value)}
+                      />
                     </div>
-                  )}
+                  </div>
 
                   {/* PAN Number */}
-                  {(isEditing || panNumber) && (
-                    <div className="col-span-1">
-                      <label className="block font-label-md text-label-md text-on-surface mb-unit font-semibold" htmlFor="panNumber">
-                        PAN Number
-                      </label>
-                      <div className="relative">
-                        <span className="material-symbols-outlined absolute left-4 top-3 text-outline">badge</span>
-                        <input
-                          disabled={!isEditing}
-                          className={`w-full border rounded-lg pl-12 pr-4 py-3 font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all ${
-                            isEditing ? 'bg-white border-outline' : 'input-recessed border-transparent cursor-not-allowed'
-                          }`}
-                          id="panNumber"
-                          type="text"
-                          value={isEditing ? panNumber : (panNumber || 'Not available')}
-                          onChange={(e) => setPanNumber(e.target.value)}
-                        />
-                      </div>
+                  <div className="col-span-1">
+                    <label className="block font-label-md text-label-md text-on-surface mb-unit font-semibold" htmlFor="pan">
+                      {t("pan_number")}
+                    </label>
+                    <div className="relative">
+                      <span className="material-symbols-outlined absolute left-4 top-3 text-outline">badge</span>
+                      <input
+                        disabled={!isEditing}
+                        className={`w-full border rounded-lg pl-12 pr-4 py-3 font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all ${
+                          isEditing ? 'bg-white border-outline' : 'input-recessed border-transparent cursor-not-allowed'
+                        }`}
+                        id="pan"
+                        type="text"
+                        value={isEditing ? panNumber : getMaskedVal(panNumber, showAadhaar)}
+                        onChange={(e) => setPanNumber(e.target.value)}
+                      />
                     </div>
-                  )}
+                  </div>
 
                   {/* Driving Licence Number */}
-                  {(isEditing || drivingLicenceNumber) && (
-                    <div className="col-span-1">
-                      <label className="block font-label-md text-label-md text-on-surface mb-unit font-semibold" htmlFor="drivingLicenceNumber">
-                        Driving Licence Number
-                      </label>
-                      <div className="relative">
-                        <span className="material-symbols-outlined absolute left-4 top-3 text-outline">directions_car</span>
-                        <input
-                          disabled={!isEditing}
-                          className={`w-full border rounded-lg pl-12 pr-4 py-3 font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all ${
-                            isEditing ? 'bg-white border-outline' : 'input-recessed border-transparent cursor-not-allowed'
-                          }`}
-                          id="drivingLicenceNumber"
-                          type="text"
-                          value={isEditing ? drivingLicenceNumber : (drivingLicenceNumber || 'Not available')}
-                          onChange={(e) => setDrivingLicenceNumber(e.target.value)}
-                        />
-                      </div>
+                  <div className="col-span-1">
+                    <label className="block font-label-md text-label-md text-on-surface mb-unit font-semibold" htmlFor="dl">
+                      {t("driving_licence_number")}
+                    </label>
+                    <div className="relative">
+                      <span className="material-symbols-outlined absolute left-4 top-3 text-outline">car_rental</span>
+                      <input
+                        disabled={!isEditing}
+                        className={`w-full border rounded-lg pl-12 pr-4 py-3 font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all ${
+                          isEditing ? 'bg-white border-outline' : 'input-recessed border-transparent cursor-not-allowed'
+                        }`}
+                        id="dl"
+                        type="text"
+                        value={isEditing ? drivingLicenceNumber : getMaskedVal(drivingLicenceNumber, showAadhaar)}
+                        onChange={(e) => setDrivingLicenceNumber(e.target.value)}
+                      />
                     </div>
-                  )}
+                  </div>
 
-                  {/* Voter ID Number */}
-                  {(isEditing || voterIdNumber) && (
-                    <div className="col-span-1">
-                      <label className="block font-label-md text-label-md text-on-surface mb-unit font-semibold" htmlFor="voterIdNumber">
-                        Voter ID Number
-                      </label>
-                      <div className="relative">
-                        <span className="material-symbols-outlined absolute left-4 top-3 text-outline">how_to_vote</span>
-                        <input
-                          disabled={!isEditing}
-                          className={`w-full border rounded-lg pl-12 pr-4 py-3 font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all ${
-                            isEditing ? 'bg-white border-outline' : 'input-recessed border-transparent cursor-not-allowed'
-                          }`}
-                          id="voterIdNumber"
-                          type="text"
-                          value={isEditing ? voterIdNumber : (voterIdNumber || 'Not available')}
-                          onChange={(e) => setVoterIdNumber(e.target.value)}
-                        />
-                      </div>
+                  {/* Voter ID */}
+                  <div className="col-span-1">
+                    <label className="block font-label-md text-label-md text-on-surface mb-unit font-semibold" htmlFor="voter">
+                      {t("voter_id_number")}
+                    </label>
+                    <div className="relative">
+                      <span className="material-symbols-outlined absolute left-4 top-3 text-outline">how_to_vote</span>
+                      <input
+                        disabled={!isEditing}
+                        className={`w-full border rounded-lg pl-12 pr-4 py-3 font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all ${
+                          isEditing ? 'bg-white border-outline' : 'input-recessed border-transparent cursor-not-allowed'
+                        }`}
+                        id="voter"
+                        type="text"
+                        value={isEditing ? voterIdNumber : getMaskedVal(voterIdNumber, showAadhaar)}
+                        onChange={(e) => setVoterIdNumber(e.target.value)}
+                      />
                     </div>
-                  )}
+                  </div>
                 </div>
               </div>
 
-              {/* SECTION 3 — ADDRESS */}
+              {/* SECTION 3 — ADDRESS DETAILS */}
               <div className="col-span-1 md:col-span-2 pt-6 mt-4">
-                <h3 className="text-on-surface font-bold text-lg mb-4 border-b border-outline-variant pb-2">Address</h3>
+                <h3 className="text-on-surface font-bold text-lg mb-4 border-b border-outline-variant pb-2">{t("sec_address")}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Full Address */}
                   <div className="col-span-1 md:col-span-2">
                     <label className="block font-label-md text-label-md text-on-surface mb-unit font-semibold" htmlFor="address">
-                      Full Address
+                      {t("address")}
                     </label>
                     <div className="relative">
                       <span className="material-symbols-outlined absolute left-4 top-3 text-outline">home</span>
@@ -750,7 +748,7 @@ export const ReviewDetails: React.FC<ReviewDetailsProps> = ({ profile, onProfile
                   {/* State */}
                   <div className="col-span-1">
                     <label className="block font-label-md text-label-md text-on-surface mb-unit font-semibold" htmlFor="state">
-                      State
+                      {t("state")}
                     </label>
                     <div className="relative">
                       <span className="material-symbols-outlined absolute left-4 top-3 text-outline">map</span>
@@ -773,7 +771,7 @@ export const ReviewDetails: React.FC<ReviewDetailsProps> = ({ profile, onProfile
                   {/* District */}
                   <div className="col-span-1">
                     <label className="block font-label-md text-label-md text-on-surface mb-unit font-semibold" htmlFor="district">
-                      District
+                      {t("district")}
                     </label>
                     <div className="relative">
                       <span className="material-symbols-outlined absolute left-4 top-3 text-outline">location_city</span>
@@ -784,7 +782,7 @@ export const ReviewDetails: React.FC<ReviewDetailsProps> = ({ profile, onProfile
                         }`}
                         id="district"
                         type="text"
-                        value={isEditing ? district : (district || 'Not available')}
+                        value={isEditing ? district : (district || (language === 'en' ? 'Not available' : language === 'hi' ? 'उपलब्ध नहीं' : 'ଉପଲବ୍ଧ ନାହିଁ'))}
                         onChange={(e) => setDistrict(e.target.value)}
                       />
                     </div>
@@ -793,10 +791,10 @@ export const ReviewDetails: React.FC<ReviewDetailsProps> = ({ profile, onProfile
                   {/* PIN Code */}
                   <div className="col-span-1">
                     <label className="block font-label-md text-label-md text-on-surface mb-unit font-semibold" htmlFor="pinCode">
-                      PIN Code
+                      {t("pin_code")}
                     </label>
                     <div className="relative">
-                      <span className="material-symbols-outlined absolute left-4 top-3 text-outline">pin_drop</span>
+                      <span className="material-symbols-outlined absolute left-4 top-3 text-outline">pin</span>
                       <input
                         disabled={!isEditing}
                         className={`w-full border rounded-lg pl-12 pr-4 py-3 font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all ${
@@ -804,7 +802,7 @@ export const ReviewDetails: React.FC<ReviewDetailsProps> = ({ profile, onProfile
                         }`}
                         id="pinCode"
                         type="text"
-                        value={isEditing ? pinCode : (pinCode || 'Not available')}
+                        value={isEditing ? pinCode : (pinCode || (language === 'en' ? 'Not available' : language === 'hi' ? 'उपलब्ध नहीं' : 'ଉପଲବ୍ଧ ନାହିଁ'))}
                         onChange={(e) => setPinCode(e.target.value)}
                       />
                     </div>
@@ -814,12 +812,12 @@ export const ReviewDetails: React.FC<ReviewDetailsProps> = ({ profile, onProfile
 
               {/* SECTION 4 — ADDITIONAL INFORMATION */}
               <div className="col-span-1 md:col-span-2 pt-6 mt-4">
-                <h3 className="text-on-surface font-bold text-lg mb-4 border-b border-outline-variant pb-2">Additional Information</h3>
+                <h3 className="text-on-surface font-bold text-lg mb-4 border-b border-outline-variant pb-2">{t("sec_additional")}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Annual Income */}
                   <div className="col-span-1">
                     <label className="block font-label-md text-label-md text-on-surface mb-unit font-semibold" htmlFor="income">
-                      Annual Income
+                      {t("annual_income")}
                     </label>
                     <div className="relative">
                       <span className="material-symbols-outlined absolute left-4 top-3 text-outline">payments</span>
@@ -839,7 +837,7 @@ export const ReviewDetails: React.FC<ReviewDetailsProps> = ({ profile, onProfile
                   {/* Occupation */}
                   <div className="col-span-1">
                     <label className="block font-label-md text-label-md text-on-surface mb-unit font-semibold" htmlFor="occupation">
-                      Occupation
+                      {t("occupation")}
                     </label>
                     <div className="relative">
                       <span className="material-symbols-outlined absolute left-4 top-3 text-outline">work</span>
@@ -858,14 +856,14 @@ export const ReviewDetails: React.FC<ReviewDetailsProps> = ({ profile, onProfile
                 </div>
               </div>
 
-              {/* Action Buttons inside Form to support Enter key submit */}
+              {/* Action Buttons inside Form */}
               <div className="flex flex-col-reverse md:flex-row justify-between items-center gap-4 mt-10">
                 <button
                   type="button"
                   onClick={handleBack}
                   className="w-full md:w-auto px-8 py-3 rounded-full border border-outline-variant text-on-surface font-label-md text-label-md hover:bg-surface-container-low hover:border-outline transition-all duration-200"
                 >
-                  Back
+                  {t("back_btn")}
                 </button>
                 <button
                   type="submit"
@@ -876,7 +874,7 @@ export const ReviewDetails: React.FC<ReviewDetailsProps> = ({ profile, onProfile
                       : 'bg-primary text-on-primary hover:bg-primary/90'
                   }`}
                 >
-                  {isSaving ? 'Saving Profile...' : 'Confirm & Continue'}
+                  {isSaving ? (language === 'en' ? 'Saving Profile...' : language === 'hi' ? 'प्रोफ़ाइल सहेजा जा रहा है...' : 'ପ୍ରୋଫାଇଲ୍ ସଂରକ୍ଷଣ ହେଉଛି...') : (language === 'en' ? 'Confirm & Continue' : language === 'hi' ? 'पुष्टि करें और जारी रखें' : 'ନିଶ୍ଚିତ କରନ୍ତୁ ଏବଂ ଜାରି ରଖନ୍ତୁ')}
                   {!isSaving && <span className="material-symbols-outlined text-sm">arrow_forward</span>}
                 </button>
               </div>
@@ -886,7 +884,13 @@ export const ReviewDetails: React.FC<ReviewDetailsProps> = ({ profile, onProfile
           {/* Privacy Note */}
           <div className="flex justify-center items-center gap-2 mt-8 text-on-surface-variant opacity-80">
             <span className="material-symbols-outlined text-[16px]">lock</span>
-            <span className="font-label-sm text-label-sm">Your information is used only to personalize your experience.</span>
+            <span className="font-label-sm text-label-sm">
+              {language === 'en' 
+                ? 'Your information is used only to personalize your experience.' 
+                : language === 'hi' 
+                  ? 'आपकी जानकारी का उपयोग केवल आपके अनुभव को व्यक्तिगत बनाने के लिए किया जाता है।' 
+                  : 'ଆପଣଙ୍କ ଅଭିଜ୍ଞତାକୁ ବ୍ୟକ୍ତିଗତ କରିବା ପାଇଁ କେବଳ ଆପଣଙ୍କ ସୂଚନା ବ୍ୟବହାର କରାଯାଏ |'}
+            </span>
           </div>
         </div>
       </main>

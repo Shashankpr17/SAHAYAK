@@ -6,6 +6,7 @@ import type { UserProfile, Scheme } from '../types';
 import { getEligibility } from '../services/api';
 import type { EvaluatedScheme, EligibilityApiResponse } from '../services/api';
 import { SCHEMES } from '../data/schemes';
+import { useLanguage } from '../context/LanguageContext';
 
 interface EligibleSchemesProps {
   profile: UserProfile | null;
@@ -16,6 +17,7 @@ export const EligibleSchemes: React.FC<EligibleSchemesProps> = ({ profile: _prof
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [eligibilityData, setEligibilityData] = useState<EligibilityApiResponse | null>(null);
+  const { t, language } = useLanguage();
 
   useEffect(() => {
     const loadEligibility = async () => {
@@ -38,7 +40,6 @@ export const EligibleSchemes: React.FC<EligibleSchemesProps> = ({ profile: _prof
   }, []);
 
   const handleSchemeClick = (evalScheme: EvaluatedScheme) => {
-    // Find matching local legacy Scheme object for fallback UI compatibility or map directly
     const foundLocal = SCHEMES.find(s => s.id.toLowerCase() === evalScheme.id.toLowerCase());
     const schemeToSelect: Scheme = foundLocal || {
       id: evalScheme.id,
@@ -60,71 +61,80 @@ export const EligibleSchemes: React.FC<EligibleSchemesProps> = ({ profile: _prof
     navigate(`/scheme-details?id=${encodeURIComponent(evalScheme.id)}`);
   };
 
-  const renderSchemeCard = (scheme: EvaluatedScheme, borderStyle: string, badgeBg: string, badgeText: string) => (
-    <div
-      key={scheme.id}
-      className={`bg-surface-container-lowest rounded-2xl p-6 shadow-natural-bloom hover:shadow-lg transition-all duration-300 border ${borderStyle} flex flex-col justify-between`}
-    >
-      <div>
-        <div className="flex items-center justify-between gap-2 mb-3">
-          <span className="bg-surface-variant text-on-surface-variant font-label-sm text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider">
-            {scheme.category}
-          </span>
-          <span className={`${badgeBg} ${badgeText} text-xs font-semibold px-2.5 py-1 rounded-full uppercase tracking-wider`}>
-            {scheme.status.replace(/_/g, ' ')}
-          </span>
+  const renderSchemeCard = (scheme: EvaluatedScheme, borderStyle: string, badgeBg: string, badgeText: string) => {
+    // Dynamic status display
+    const statusLabel = scheme.status === 'eligible' 
+      ? t('gender_male') === 'Male' ? 'Eligible' : language === 'hi' ? 'योग्य' : 'ଯୋଗ୍ୟ'
+      : scheme.status === 'possible' 
+        ? t('gender_male') === 'Male' ? 'May Be Eligible' : language === 'hi' ? 'संभावित योग्य' : 'ଯୋଗ୍ୟ ହୋଇପାରନ୍ତି'
+        : t('gender_male') === 'Male' ? 'More Info Needed' : language === 'hi' ? 'अतिरिक्त जानकारी आवश्यक' : 'ଅଧିକ ସୂଚନା ଆବଶ୍ୟକ';
+
+    return (
+      <div
+        key={scheme.id}
+        className={`bg-surface-container-lowest rounded-2xl p-6 shadow-natural-bloom hover:shadow-lg transition-all duration-300 border ${borderStyle} flex flex-col justify-between`}
+      >
+        <div>
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <span className="bg-surface-variant text-on-surface-variant font-label-sm text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider">
+              {scheme.category}
+            </span>
+            <span className={`${badgeBg} ${badgeText} text-xs font-semibold px-2.5 py-1 rounded-full uppercase tracking-wider`}>
+              {statusLabel}
+            </span>
+          </div>
+
+          <h3 className="font-headline-sm text-xl font-bold text-on-surface mb-3">
+            {scheme.name}
+          </h3>
+
+          {/* Explainable Reasons */}
+          {scheme.reasons && scheme.reasons.length > 0 && (
+            <div className="mb-4 bg-surface-container-low p-3 rounded-xl">
+              <h4 className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2 flex items-center gap-1">
+                <span className="material-symbols-outlined text-sm text-primary">check_circle</span>
+                {language === 'en' ? 'Why You Match:' : language === 'hi' ? 'आप क्यों मेल खाते हैं:' : 'ଆପଣ କାହିଁକି ମେଳ ଖାଉଛନ୍ତି:'}
+              </h4>
+              <ul className="space-y-1">
+                {scheme.reasons.map((reason, idx) => (
+                  <li key={idx} className="text-sm text-on-surface-variant flex items-start gap-1.5">
+                    <span className="text-primary font-bold">•</span>
+                    <span>{reason}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Missing Information if any */}
+          {scheme.missing_information && scheme.missing_information.length > 0 && (
+            <div className="mb-4 bg-amber-500/10 border border-amber-500/20 p-3 rounded-xl">
+              <h4 className="text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider mb-1 flex items-center gap-1">
+                <span className="material-symbols-outlined text-sm">help_outline</span>
+                {language === 'en' ? 'Information Needed:' : language === 'hi' ? 'जानकारी आवश्यक:' : 'ସୂଚନା ଆବଶ୍ୟକ:'}
+              </h4>
+              <ul className="space-y-1">
+                {scheme.missing_information.map((info, idx) => (
+                  <li key={idx} className="text-xs text-amber-800 dark:text-amber-300 flex items-start gap-1">
+                    <span>-</span>
+                    <span>{info}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
 
-        <h3 className="font-headline-sm text-xl font-bold text-on-surface mb-3">
-          {scheme.name}
-        </h3>
-
-        {/* Explainable Reasons */}
-        {scheme.reasons && scheme.reasons.length > 0 && (
-          <div className="mb-4 bg-surface-container-low p-3 rounded-xl">
-            <h4 className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2 flex items-center gap-1">
-              <span className="material-symbols-outlined text-sm text-primary">check_circle</span>
-              Why You Match:
-            </h4>
-            <ul className="space-y-1">
-              {scheme.reasons.map((reason, idx) => (
-                <li key={idx} className="text-sm text-on-surface-variant flex items-start gap-1.5">
-                  <span className="text-primary font-bold">•</span>
-                  <span>{reason}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* Missing Information if any */}
-        {scheme.missing_information && scheme.missing_information.length > 0 && (
-          <div className="mb-4 bg-amber-500/10 border border-amber-500/20 p-3 rounded-xl">
-            <h4 className="text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider mb-1 flex items-center gap-1">
-              <span className="material-symbols-outlined text-sm">help_outline</span>
-              Information Needed:
-            </h4>
-            <ul className="space-y-1">
-              {scheme.missing_information.map((info, idx) => (
-                <li key={idx} className="text-xs text-amber-800 dark:text-amber-300 flex items-start gap-1">
-                  <span>-</span>
-                  <span>{info}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+        <button
+          onClick={() => handleSchemeClick(scheme)}
+          className="mt-4 w-full bg-primary hover:bg-primary-hover text-on-primary py-2.5 px-4 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
+        >
+          <span>{t("view_details")}</span>
+          <span className="material-symbols-outlined text-lg">arrow_forward</span>
+        </button>
       </div>
-
-      <button
-        onClick={() => handleSchemeClick(scheme)}
-        className="mt-4 w-full bg-primary hover:bg-primary-hover text-on-primary py-2.5 px-4 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
-      >
-        <span>View Details</span>
-        <span className="material-symbols-outlined text-lg">arrow_forward</span>
-      </button>
-    </div>
-  );
+    );
+  };
 
   const eligibleList = eligibilityData?.eligible_schemes || [];
   const possibleList = eligibilityData?.possible_schemes || [];
@@ -140,15 +150,16 @@ export const EligibleSchemes: React.FC<EligibleSchemesProps> = ({ profile: _prof
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-outline-variant/30 pb-6">
           <div>
             <span className="bg-primary/10 text-primary text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider inline-block mb-2">
-              Eligibility Results
+              {language === 'en' ? 'Eligibility Results' : language === 'hi' ? 'पात्रता परिणाम' : 'ଯୋଗ୍ୟତା ଫଳାଫଳ'}
             </span>
             <h1 className="text-3xl md:text-4xl font-extrabold text-on-surface">
-              Recommended Government Schemes
+              {t("dashboard_title")}
             </h1>
             {eligibilityData?.profile && (
               <p className="text-on-surface-variant text-sm mt-1">
-                Evaluated for: <span className="font-bold text-on-surface">{eligibilityData.profile.full_name || 'Applicant'}</span> 
-                {eligibilityData.profile.age && <span> ({eligibilityData.profile.age} years old)</span>} 
+                {language === 'en' ? 'Evaluated for: ' : language === 'hi' ? 'मूल्यांकनकर्ता: ' : 'ମୂଲ୍ୟାଙ୍କନ କରାଯାଇଛି: '}
+                <span className="font-bold text-on-surface">{eligibilityData.profile.full_name || 'Applicant'}</span> 
+                {eligibilityData.profile.age && <span> ({eligibilityData.profile.age} {language === 'en' ? 'years old' : language === 'hi' ? 'वर्षीय' : 'ବର୍ଷ ବୟସ୍କ'})</span>} 
                 {eligibilityData.profile.state && <span> • {eligibilityData.profile.state}</span>}
               </p>
             )}
@@ -159,14 +170,16 @@ export const EligibleSchemes: React.FC<EligibleSchemesProps> = ({ profile: _prof
             className="text-primary font-semibold hover:underline flex items-center gap-1 text-sm shrink-0"
           >
             <span className="material-symbols-outlined text-base">edit</span>
-            Edit Your Profile Details
+            {language === 'en' ? 'Edit Your Profile Details' : language === 'hi' ? 'अपने प्रोफ़ाइल विवरण संपादित करें' : 'ପ୍ରୋଫାଇଲ୍ ବିବରଣୀ ସଂଶୋଧନ କରନ୍ତୁ'}
           </button>
         </div>
 
         {loading ? (
           <div className="py-20 flex flex-col items-center justify-center gap-4 text-center">
             <span className="material-symbols-outlined text-4xl text-primary animate-spin">sync</span>
-            <p className="text-on-surface-variant font-medium">Evaluating scheme eligibility criteria...</p>
+            <p className="text-on-surface-variant font-medium">
+              {language === 'en' ? 'Evaluating scheme eligibility criteria...' : language === 'hi' ? 'योजना पात्रता मानदंडों का मूल्यांकन किया जा रहा है...' : 'ଯୋଜନା ଯୋଗ୍ୟତା ମାପଦଣ୍ଡ ମୂଲ୍ୟାଙ୍କନ କରାଯାଉଛି...'}
+            </p>
           </div>
         ) : (
           <div className="space-y-12">
@@ -176,7 +189,7 @@ export const EligibleSchemes: React.FC<EligibleSchemesProps> = ({ profile: _prof
               <div className="flex items-center gap-2 mb-6">
                 <span className="material-symbols-outlined text-emerald-600 text-2xl">verified</span>
                 <h2 className="text-2xl font-bold text-on-surface">
-                  Eligible for You ({eligibleList.length})
+                  {language === 'en' ? `Eligible for You (${eligibleList.length})` : language === 'hi' ? `आपके लिए पात्र (${eligibleList.length})` : `ଆପଣଙ୍କ ପାଇଁ ଯୋଗ୍ୟ (${eligibleList.length})`}
                 </h2>
               </div>
 
@@ -188,7 +201,11 @@ export const EligibleSchemes: React.FC<EligibleSchemesProps> = ({ profile: _prof
                 </div>
               ) : (
                 <div className="bg-surface-container-low rounded-xl p-6 text-center text-on-surface-variant">
-                  No schemes strictly matched all eligibility thresholds based on current profile parameters.
+                  {language === 'en' 
+                    ? 'No schemes strictly matched all eligibility thresholds based on current profile parameters.' 
+                    : language === 'hi' 
+                      ? 'वर्तमान प्रोफ़ाइल मापदंडों के आधार पर कोई भी योजना आपकी पात्रता से मेल नहीं खाई।' 
+                      : 'ବର୍ତ୍ତମାନର ପ୍ରୋଫାଇଲ୍ ତଥ୍ୟ ଆଧାରରେ କୌଣସି ଯୋଜନା ଯୋଗ୍ୟତା ସହ ମେଳ ଖାଇଲା ନାହିଁ |'}
                 </div>
               )}
             </div>
@@ -199,7 +216,7 @@ export const EligibleSchemes: React.FC<EligibleSchemesProps> = ({ profile: _prof
                 <div className="flex items-center gap-2 mb-6">
                   <span className="material-symbols-outlined text-amber-600 text-2xl">stars</span>
                   <h2 className="text-2xl font-bold text-on-surface">
-                    You May Be Eligible ({possibleList.length})
+                    {language === 'en' ? `You May Be Eligible (${possibleList.length})` : language === 'hi' ? `आप पात्र हो सकते हैं (${possibleList.length})` : `ଆପଣ ଯୋଗ୍ୟ ହୋଇପାରନ୍ତି (${possibleList.length})`}
                   </h2>
                 </div>
 
@@ -217,7 +234,7 @@ export const EligibleSchemes: React.FC<EligibleSchemesProps> = ({ profile: _prof
                 <div className="flex items-center gap-2 mb-6">
                   <span className="material-symbols-outlined text-blue-600 text-2xl">info</span>
                   <h2 className="text-2xl font-bold text-on-surface">
-                    More Information Needed ({needsInfoList.length})
+                    {language === 'en' ? `More Information Needed (${needsInfoList.length})` : language === 'hi' ? `अधिक जानकारी आवश्यक (${needsInfoList.length})` : `ଅଧିକ ସୂଚନା ଆବଶ୍ୟକ (${needsInfoList.length})`}
                   </h2>
                 </div>
 

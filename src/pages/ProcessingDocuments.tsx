@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { DocumentType, UserProfile } from '../types';
 import { extractFields } from '../services/api';
+import { useLanguage } from '../context/LanguageContext';
 
 export const validateName = (name: string | null | undefined): boolean => {
   if (!name) return false;
@@ -51,7 +52,9 @@ export const validateDOB = (dob: string | null | undefined): boolean => {
     daysInMonths[1] = 29;
   }
   
-  return day >= 1 && day <= daysInMonths[month - 1];
+  if (day < 1 || day > daysInMonths[month - 1]) return false;
+  
+  return true;
 };
 
 export const normalizeDOB = (dob: string): string => {
@@ -96,368 +99,289 @@ interface ProcessingDocumentsProps {
   onProcessingComplete: (profile: UserProfile) => void;
 }
 
-export const ProcessingDocuments: React.FC<ProcessingDocumentsProps> = ({ 
+export const ProcessingDocuments: React.FC<ProcessingDocumentsProps> = ({
   uploadedFiles,
-  documentType, 
+  documentType,
   documentSubtype,
-  onProcessingComplete 
+  onProcessingComplete
 }) => {
-  const [currentStep, setCurrentStep] = useState(1); // 1 = Reading, 2 = Extracting, 3 = Preparing, 4 = Navigating
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const navigate = useNavigate();
+  const [currentStep, setCurrentStep] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+  const { t, language } = useLanguage();
 
   useEffect(() => {
-    let isMounted = true;
+    let active = true;
 
-    const processDocument = async () => {
+    const runSteps = async () => {
+      // Step 0: Uploading Files (simulated transition delay)
+      if (!active) return;
+      await new Promise((r) => setTimeout(r, 1000));
+      
+      // Step 1: Reading Documents
+      if (!active) return;
+      setCurrentStep(1);
+      
+      // Call backend api/documents/extract-fields
       try {
-        setErrorMessage(null);
-        setCurrentStep(1); // Reading document
+        console.log(`[DATA FLOW] Initiating backend API call POST /api/documents/extract-fields`);
+        const result = await extractFields(uploadedFiles, documentType || 'ID Proof', documentSubtype || undefined);
+        console.log(`[DATA FLOW] Backend API response received:`, result);
+        
+        if (!active) return;
 
-        // Step 1 timer
-        await new Promise((r) => setTimeout(r, 1500));
-        if (!isMounted) return;
+        if (result.success && result.extracted_data) {
+          // Step 2: Extracting Info
+          setCurrentStep(2);
+          await new Promise((r) => setTimeout(r, 1200));
 
-        setCurrentStep(2); // Extracting information
+          // Step 3: Preparing Profile
+          if (!active) return;
+          setCurrentStep(3);
+          await new Promise((r) => setTimeout(r, 1000));
 
-        let extractedProfile: UserProfile = {
-          fullName: '',
-          dob: '',
-          state: '',
-          address: '',
-          annualIncome: '',
-          occupation: '',
-          gender: '',
-          fatherName: '',
-          motherName: '',
-          bloodGroup: '',
-          aadhaarNumber: '',
-          panNumber: '',
-          drivingLicenceNumber: '',
-          voterIdNumber: '',
-          district: '',
-          pinCode: '',
-        };
+          // Verify if Name or DOB requires fallback flags:
+          // A Name is invalid if it fails validateName logic or matches prohibited keywords
+          const nameVal = result.extracted_data.full_name;
+          const dobVal = result.extracted_data.date_of_birth;
+          
+          const isNameValid = validateName(nameVal);
+          const isDobValid = validateDOB(dobVal);
 
-        if (uploadedFiles && uploadedFiles.length > 0) {
-          console.log('[DATA FLOW] Sending files to backend extract-fields API:', uploadedFiles.map(f => f.name));
-          const res = await extractFields(uploadedFiles, documentType || 'Other', documentSubtype || undefined);
-          console.log('[DATA FLOW] Backend extract-fields response:', res);
+          let cleanNameVal = isNameValid && nameVal ? nameVal : '';
+          let cleanDobVal = isDobValid && dobVal ? dobVal : '';
 
-          if (res.success && res.extracted_data) {
-            const ext = res.extracted_data;
-            const conf = res.confidence_data || {};
-            
-            // Validate name
-            const rawName = ext.full_name || '';
-            const nameConf = conf.full_name?.confidence ?? 100;
-            const isNameValid = validateName(rawName) && (typeof nameConf !== 'number' || nameConf >= 70);
-            const validName = isNameValid ? cleanName(rawName) : '';
+          let notice = null;
 
-            // Validate DOB
-            const rawDob = ext.date_of_birth || '';
-            const isDobValid = validateDOB(rawDob);
-            const validDob = isDobValid ? normalizeDOB(rawDob) : '';
-
-            // Validate State
-            const rawState = ext.state || '';
-            const stateConf = conf.state?.confidence ?? 100;
-            const isStateValid = validateIndianState(rawState) && (typeof stateConf !== 'number' || stateConf >= 70);
-            const validState = isStateValid ? rawState : '';
-
-            // Validate Address
-            const rawAddress = ext.address || '';
-            const addrConf = conf.address?.confidence ?? 100;
-            const isAddrValid = validateAddress(rawAddress) && (typeof addrConf !== 'number' || addrConf >= 70);
-            const validAddress = isAddrValid ? rawAddress : '';
-
-            extractedProfile = {
-              fullName: validName,
-              dob: validDob,
-              state: validState,
-              address: validAddress,
-              annualIncome: ext.annual_income || '',
-              occupation: ext.occupation || '',
-              gender: ext.gender || '',
-              fatherName: ext.father_name || '',
-              motherName: ext.mother_name || '',
-              bloodGroup: ext.blood_group || '',
-              aadhaarNumber: ext.aadhaar_number || '',
-              panNumber: ext.pan_number || '',
-              drivingLicenceNumber: ext.driving_licence_number || '',
-              voterIdNumber: ext.voter_id_number || '',
-              district: ext.district || '',
-              pinCode: ext.pin_code || '',
+          if (!isNameValid && nameVal) {
+            console.log(`[VALIDATION FALLBACK] Name '${nameVal}' failed strict check. Clearing value for review.`);
+            notice = {
+              type: 'warning',
+              message: 'Some details could not be confidently extracted. Please review and edit them.'
             };
+          }
 
-            // Debug prints
-            console.log("RAW EXTRACTION:", ext);
-            console.log("VALIDATED RESULT:", extractedProfile);
+          if (!isDobValid && dobVal) {
+            console.log(`[VALIDATION FALLBACK] DOB '${dobVal}' failed validation. Clearing value for review.`);
+            notice = {
+              type: 'warning',
+              message: 'Some details could not be confidently extracted. Please review and edit them.'
+            };
+          }
 
-            localStorage.setItem('sahayak_extraction_success', 'true');
-            if (res.confidence_data) {
-              localStorage.setItem('sahayak_confidence_data', JSON.stringify(res.confidence_data));
-            } else {
-              localStorage.removeItem('sahayak_confidence_data');
-            }
+          // If there were missing important keys, flag a generic warning
+          const hasMissingImportant = !cleanNameVal || !cleanDobVal || !result.extracted_data.state || !result.extracted_data.address;
+          if (hasMissingImportant && !notice) {
+            notice = {
+              type: 'info',
+              message: 'Some details are missing. Please complete your profile to unlock all eligible matches.'
+            };
+          }
+
+          if (notice) {
+            localStorage.setItem('sahayak_notice_type', notice.type);
+            localStorage.setItem('sahayak_notice_msg', notice.message);
           } else {
-            localStorage.setItem('sahayak_extraction_success', 'false');
-            localStorage.removeItem('sahayak_confidence_data');
+            localStorage.removeItem('sahayak_notice_type');
+            localStorage.removeItem('sahayak_notice_msg');
           }
+
+          const mappedProfile: UserProfile = {
+            fullName: cleanNameVal,
+            dob: cleanDobVal,
+            state: result.extracted_data.state || '',
+            address: result.extracted_data.address || '',
+            annualIncome: result.extracted_data.annual_income || '',
+            occupation: result.extracted_data.occupation || '',
+            gender: result.extracted_data.gender || undefined,
+            fatherName: result.extracted_data.father_name || undefined,
+            motherName: result.extracted_data.mother_name || undefined,
+            bloodGroup: result.extracted_data.blood_group || undefined,
+            aadhaarNumber: result.extracted_data.aadhaar_number || undefined,
+            panNumber: result.extracted_data.pan_number || undefined,
+            drivingLicenceNumber: result.extracted_data.driving_licence_number || undefined,
+            voterIdNumber: result.extracted_data.voter_id_number || undefined,
+            district: result.extracted_data.district || undefined,
+            pinCode: result.extracted_data.pin_code || undefined
+          };
+
+          onProcessingComplete(mappedProfile);
+          navigate('/review');
         } else {
-          // If no file was passed (e.g. direct URL visit), fetch existing profile from backend
-          const res = await fetch('http://127.0.0.1:8001/api/profile').then(r => r.json()).catch(() => ({}));
-          if (res.success && res.data) {
-            const d = res.data;
-            const rawName = d.full_name || '';
-            const validName = validateName(rawName) ? cleanName(rawName) : '';
-            const rawDob = d.date_of_birth || '';
-            const validDob = validateDOB(rawDob) ? normalizeDOB(rawDob) : '';
-            const rawState = d.state || '';
-            const validState = validateIndianState(rawState) ? rawState : '';
-            const rawAddress = d.address || '';
-            const validAddress = validateAddress(rawAddress) ? rawAddress : '';
-
-            extractedProfile = {
-              fullName: validName,
-              dob: validDob,
-              state: validState,
-              address: validAddress,
-              annualIncome: d.annual_income || '',
-              occupation: d.occupation || '',
-              gender: d.gender || '',
-              fatherName: d.father_name || '',
-              motherName: d.mother_name || '',
-              bloodGroup: d.blood_group || '',
-              aadhaarNumber: d.aadhaar_number || '',
-              panNumber: d.pan_number || '',
-              drivingLicenceNumber: d.driving_licence_number || '',
-              voterIdNumber: d.voter_id_number || '',
-              district: d.district || '',
-              pinCode: d.pin_code || '',
-            };
-          }
+          setError('Failed to extract information from documents.');
         }
-
-        if (!isMounted) return;
-        setCurrentStep(3); // Preparing profile
-
-        await new Promise((r) => setTimeout(r, 1500));
-        if (!isMounted) return;
-
-        // Save profile and navigate
-        console.log('[DATA FLOW] Saving extracted profile and navigating to /review:', extractedProfile);
-        localStorage.setItem('sahayak_user_profile', JSON.stringify(extractedProfile));
-        onProcessingComplete(extractedProfile);
-        setCurrentStep(4);
-        navigate('/review');
-
       } catch (err: any) {
-        console.error('[DATA FLOW ERROR] Document extraction failed:', err);
-        if (isMounted) {
-          setErrorMessage(err.message || 'Failed to extract document content. Please try again.');
+        console.error('Error during field extraction:', err);
+        if (active) {
+          setError(err.message || 'An error occurred during document processing.');
         }
       }
     };
 
-    processDocument();
+    runSteps();
 
     return () => {
-      isMounted = false;
+      active = false;
     };
   }, [uploadedFiles, documentType, documentSubtype, navigate, onProcessingComplete]);
 
-  const handleCancel = () => {
-    navigate('/upload');
-  };
-
   return (
     <div className="min-h-screen flex flex-col bg-background text-on-surface">
-      {/* Top Banner (Minimal header, suppression of main nav per layout rules) */}
-      <header className="bg-surface shadow-sm h-20 flex items-center px-4 md:px-margin-desktop w-full shrink-0">
-        <div className="max-w-container-max mx-auto w-full flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <img 
-              alt="State Emblem of India" 
-              className="h-10 w-auto"
-              src="https://lh3.googleusercontent.com/aida/AP1WRLvpacausV289CU9wbrAYrstiDM35Kyo3CN87nc0Gfp9QY6gCcaDsTwNN38c2XVpFb3M_Jo-2Q7X6F_PGpFFIQlNoAT6K__6BF0CC75k77cjCypZ8sT9rrrz5SCSLArQfME1daiSxtGedJHV8a4je-_Rl7MFHVYiJxNk2HfcuBI08dSB0ehcXIkoxj-ad4b8fAEAOrhtH1VJcwRo1gBdQHAQgjWVS-TO9srGotOFfch7SrmaMgOELW0S3v8"
-            />
-            <div className="text-title-lg font-title-lg font-bold text-primary">SAHAYAK</div>
-          </div>
-          <button 
-            onClick={handleCancel}
-            className="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-2 text-label-md font-label-md"
-          >
-            <span className="material-symbols-outlined text-[20px]">close</span> 
-            Cancel
-          </button>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="flex-grow flex items-center justify-center py-12 px-4 md:px-margin-desktop">
-        {errorMessage && (
-          <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 bg-error/10 border border-error text-error px-6 py-4 rounded-xl shadow-lg flex items-center gap-4">
-            <span>{errorMessage}</span>
-            <button onClick={() => navigate('/upload')} className="underline font-semibold">Try Again</button>
-          </div>
-        )}
-        <div className="max-w-container-max mx-auto w-full flex flex-col lg:flex-row gap-gutter lg:gap-margin-desktop items-center lg:items-stretch h-full min-h-[500px]">
+      <main className="flex-grow flex items-center justify-center p-4">
+        <div className="w-full max-w-xl bg-surface-container-lowest rounded-2xl p-8 border border-outline-variant/30 shadow-natural-bloom flex flex-col items-center gap-8">
           
-          {/* Left: Document Preview (Blurred) */}
-          <div className="flex-1 w-full max-w-[600px] min-h-[350px] bg-surface-container-low rounded-xl shadow-natural-bloom flex items-center justify-center p-6 relative overflow-hidden border border-outline-variant/30">
-            <div className="absolute inset-0 bg-white/40 backdrop-blur-md z-10 flex items-center justify-center">
-              <div className="bg-surface/80 p-stack-lg rounded-xl flex flex-col items-center gap-stack-md text-center max-w-[80%]">
-                <span className="material-symbols-outlined text-[48px] text-primary pulse-border rounded-full p-4 border-2">
-                  document_scanner
-                </span>
-                <p className="text-title-lg font-title-lg text-primary font-semibold">Scanning Documents</p>
-                <p className="text-sm text-on-surface-variant">Uploading {uploadedFiles.length} file(s) for OCR validation</p>
-              </div>
-            </div>
-            {/* Mock document content underneath blur */}
-            <div className="w-full h-full bg-white shadow-sm p-8 flex flex-col gap-4 opacity-50 pointer-events-none">
-              <div className="h-8 bg-surface-variant rounded w-1/3"></div>
-              <div className="h-4 bg-surface-variant rounded w-full mt-4"></div>
-              <div className="h-4 bg-surface-variant rounded w-full"></div>
-              <div className="h-4 bg-surface-variant rounded w-5/6"></div>
-              <div className="h-32 bg-surface-variant rounded w-full mt-8"></div>
-              <div className="h-4 bg-surface-variant rounded w-full mt-4"></div>
-              <div className="h-4 bg-surface-variant rounded w-3/4"></div>
-            </div>
+          {/* Logo Branding */}
+          <div className="text-display-sm font-display-sm text-primary font-bold tracking-tight">
+            {t("logo")}
           </div>
 
-          {/* Right: Reading Status Card */}
-          <div className="flex-1 w-full max-w-[500px] flex flex-col justify-center">
-            <div className="bg-surface-container-lowest rounded-xl shadow-natural-bloom p-6 md:p-margin-desktop border border-surface-container flex flex-col gap-stack-lg">
-              <div>
-                <h1 className="text-headline-lg font-headline-lg text-on-surface mb-unit font-bold">Reading your documents</h1>
-                <p className="text-body-md font-body-md text-on-surface-variant leading-relaxed">
-                  Please wait while we extract important information to save you time.
+          {error ? (
+            <div className="text-center space-y-6 animate-fade-in w-full">
+              <span className="material-symbols-outlined text-error text-5xl">error</span>
+              <div className="space-y-2">
+                <h2 className="text-xl font-bold text-on-surface">
+                  {language === 'en' ? 'Processing Failed' : language === 'hi' ? 'प्रसंस्करण विफल' : 'ପ୍ରକ୍ରିୟାକରଣ ବିଫଳ ହେଲା'}
+                </h2>
+                <p className="text-sm text-on-surface-variant leading-relaxed">{error}</p>
+              </div>
+              <button 
+                onClick={() => navigate('/upload')}
+                className="px-6 py-2.5 bg-primary text-on-primary rounded-full font-bold hover:bg-primary-hover transition-colors inline-flex items-center gap-2"
+              >
+                <span className="material-symbols-outlined text-sm">arrow_back</span>
+                <span>{language === 'en' ? 'Back to Upload' : language === 'hi' ? 'अपलोड पर वापस जाएं' : 'ଅପଲୋଡକୁ ଫେରିଯାଆନ୍ତୁ'}</span>
+              </button>
+            </div>
+          ) : (
+            <div className="w-full space-y-8">
+              <div className="text-center space-y-2">
+                <h2 className="text-2xl font-extrabold text-on-surface">{t("processing_title")}</h2>
+                <p className="text-sm text-on-surface-variant">
+                  {language === 'en' ? 'This will only take a minute. Please keep this tab open.' : language === 'hi' ? 'इसमें बस एक मिनट लगेगा। कृपया इस टैब को खुला रखें।' : 'ଏଥିପାଇଁ କେବଳ ଏକ ମିନିଟ୍ ଲାଗିବ | ଦୟାକରି ଏହି ଟ୍ୟାବ୍ ଖୋଲା ରଖନ୍ତୁ |'}
                 </p>
               </div>
 
-              {/* Progress Steps */}
-              <div className="flex flex-col gap-stack-md">
-                
-                {/* Step 1: Uploaded (Always Done here) */}
-                <div className="flex items-start gap-stack-md">
-                  <div className="w-8 h-8 rounded-full bg-secondary text-on-secondary flex items-center justify-center shrink-0 mt-1">
-                    <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                      check
-                    </span>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-title-lg font-title-lg text-on-surface font-semibold">{uploadedFiles.length} File(s) uploaded</span>
-                    <span className="text-body-md font-body-md text-on-surface-variant">Securely transferred</span>
-                  </div>
-                </div>
-
-                {/* Step 2: Reading Document */}
-                <div className={`flex items-start gap-stack-md relative transition-opacity duration-300 ${currentStep < 1 ? 'opacity-50' : 'opacity-100'}`}>
-                  {/* Connecting Line */}
-                  <div className="absolute left-4 top-[-24px] bottom-[32px] w-[2px] bg-secondary -z-10 transform -translate-x-1/2"></div>
+              {/* Progress Steps Grid */}
+              <div className="max-w-md mx-auto bg-surface-container-low rounded-2xl p-6 border border-outline-variant/20">
+                <div className="flex flex-col gap-6">
                   
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-1 ${
-                    currentStep === 1 
-                      ? 'bg-primary-container text-on-primary-container' 
-                      : currentStep > 1 
-                        ? 'bg-secondary text-on-secondary' 
-                        : 'border-2 border-outline-variant bg-surface text-outline-variant'
-                  }`}>
-                    {currentStep === 1 ? (
-                      <span className="material-symbols-outlined text-[16px] animate-spin">progress_activity</span>
-                    ) : currentStep > 1 ? (
+                  {/* Step 1: Uploading Files */}
+                  <div className="flex items-start gap-stack-md relative">
+                    <div className="absolute left-4 top-10 bottom-[-24px] w-[2px] bg-secondary -z-10 transform -translate-x-1/2"></div>
+                    <div className="w-8 h-8 rounded-full bg-secondary text-on-secondary flex items-center justify-center shrink-0">
                       <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>check</span>
-                    ) : (
-                      <span className="material-symbols-outlined text-[16px]">menu_book</span>
-                    )}
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-title-lg font-title-lg text-on-surface font-semibold">
+                        {uploadedFiles.length} {language === 'en' ? 'File(s) uploaded' : language === 'hi' ? 'फ़ाइलें अपलोड की गईं' : 'ଫାଇଲ୍ ଅପଲୋଡ୍ ହୋଇଛି'}
+                      </span>
+                      <span className="text-body-md font-body-md text-on-surface-variant">
+                        {language === 'en' ? 'Securely transferred' : language === 'hi' ? 'सुरक्षित रूप से स्थानांतरित' : 'ସୁରକ୍ଷିତ ଭାବେ ସ୍ଥାନାନ୍ତରିତ'}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex flex-col">
-                    <span className={`text-title-lg font-title-lg ${currentStep === 1 ? 'text-primary font-bold' : 'text-on-surface'}`}>
-                      Reading Documents
-                    </span>
-                    <span className="text-body-md font-body-md text-on-surface-variant">Scanning document layouts...</span>
-                    {currentStep === 1 && (
-                      <div className="mt-4 h-2 bg-surface-container rounded-full overflow-hidden w-full max-w-[200px]">
-                        <div className="h-full bg-primary rounded-full w-2/3 animate-pulse"></div>
-                      </div>
-                    )}
-                  </div>
-                </div>
 
-                {/* Step 3: Extracting Info */}
-                <div className={`flex items-start gap-stack-md relative transition-opacity duration-300 ${currentStep < 2 ? 'opacity-50' : 'opacity-100'}`}>
-                  {/* Connecting Line */}
-                  <div className={`absolute left-4 top-[-24px] bottom-[32px] w-[2px] -z-10 transform -translate-x-1/2 ${currentStep > 1 ? 'bg-secondary' : 'bg-surface-variant'}`}></div>
-                  
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-1 ${
-                    currentStep === 2 
-                      ? 'bg-primary-container text-on-primary-container' 
-                      : currentStep > 2 
-                        ? 'bg-secondary text-on-secondary' 
-                        : 'border-2 border-outline-variant bg-surface text-outline-variant'
-                  }`}>
-                    {currentStep === 2 ? (
-                      <span className="material-symbols-outlined text-[16px] animate-spin">progress_activity</span>
-                    ) : currentStep > 2 ? (
-                      <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>check</span>
-                    ) : (
-                      <span className="material-symbols-outlined text-[16px]">fingerprint</span>
-                    )}
+                  {/* Step 2: Reading Document */}
+                  <div className={`flex items-start gap-stack-md relative transition-opacity duration-300 ${currentStep < 1 ? 'opacity-50' : 'opacity-100'}`}>
+                    <div className="absolute left-4 top-[-24px] bottom-[32px] w-[2px] bg-secondary -z-10 transform -translate-x-1/2"></div>
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-1 ${
+                      currentStep === 1 
+                        ? 'bg-primary-container text-on-primary-container' 
+                        : currentStep > 1 
+                          ? 'bg-secondary text-on-secondary' 
+                          : 'border-2 border-outline-variant bg-surface text-outline-variant'
+                    }`}>
+                      {currentStep === 1 ? (
+                        <span className="material-symbols-outlined text-[16px] animate-spin">progress_activity</span>
+                      ) : currentStep > 1 ? (
+                        <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>check</span>
+                      ) : (
+                        <span className="material-symbols-outlined text-[16px]">menu_book</span>
+                      )}
+                    </div>
+                    <div className="flex flex-col">
+                      <span className={`text-title-lg font-title-lg ${currentStep === 1 ? 'text-primary font-bold' : 'text-on-surface'}`}>
+                        {language === 'en' ? 'Reading Documents' : language === 'hi' ? 'दस्तावेज़ पढ़े जा रहे हैं' : 'ଦସ୍ତାବିଜ୍ ପଢାଯାଉଛି'}
+                      </span>
+                      <span className="text-body-md font-body-md text-on-surface-variant">{t("processing_step_1")}</span>
+                      {currentStep === 1 && (
+                        <div className="mt-4 h-2 bg-surface-container rounded-full overflow-hidden w-full max-w-[200px]">
+                          <div className="h-full bg-primary rounded-full w-2/3 animate-pulse"></div>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex flex-col">
-                    <span className={`text-title-lg font-title-lg ${currentStep === 2 ? 'text-primary font-bold' : 'text-on-surface'}`}>
-                      Extracting Important Information
-                    </span>
-                    <span className="text-body-md font-body-md text-on-surface-variant">Extracting name, address, and IDs...</span>
-                    {currentStep === 2 && (
-                      <div className="mt-4 h-2 bg-surface-container rounded-full overflow-hidden w-full max-w-[200px]">
-                        <div className="h-full bg-primary rounded-full w-1/2 animate-pulse"></div>
-                      </div>
-                    )}
-                  </div>
-                </div>
 
-                {/* Step 4: Preparing Profile */}
-                <div className={`flex items-start gap-stack-md relative transition-opacity duration-300 ${currentStep < 3 ? 'opacity-50' : 'opacity-100'}`}>
-                  {/* Connecting Line */}
-                  <div className={`absolute left-4 top-[-24px] bottom-[32px] w-[2px] -z-10 transform -translate-x-1/2 ${currentStep > 2 ? 'bg-secondary' : 'bg-surface-variant'}`}></div>
-                  
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-1 ${
-                    currentStep === 3 
-                      ? 'bg-primary-container text-on-primary-container' 
-                      : currentStep > 3 
-                        ? 'bg-secondary text-on-secondary' 
-                        : 'border-2 border-outline-variant bg-surface text-outline-variant'
-                  }`}>
-                    {currentStep === 3 ? (
-                      <span className="material-symbols-outlined text-[16px] animate-spin">progress_activity</span>
-                    ) : currentStep > 3 ? (
-                      <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>check</span>
-                    ) : (
-                      <span className="material-symbols-outlined text-[16px]">person</span>
-                    )}
+                  {/* Step 3: Extracting Info */}
+                  <div className={`flex items-start gap-stack-md relative transition-opacity duration-300 ${currentStep < 2 ? 'opacity-50' : 'opacity-100'}`}>
+                    <div className={`absolute left-4 top-[-24px] bottom-[32px] w-[2px] -z-10 transform -translate-x-1/2 ${currentStep > 1 ? 'bg-secondary' : 'bg-surface-variant'}`}></div>
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-1 ${
+                      currentStep === 2 
+                        ? 'bg-primary-container text-on-primary-container' 
+                        : currentStep > 2 
+                          ? 'bg-secondary text-on-secondary' 
+                          : 'border-2 border-outline-variant bg-surface text-outline-variant'
+                    }`}>
+                      {currentStep === 2 ? (
+                        <span className="material-symbols-outlined text-[16px] animate-spin">progress_activity</span>
+                      ) : currentStep > 2 ? (
+                        <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>check</span>
+                      ) : (
+                        <span className="material-symbols-outlined text-[16px]">fingerprint</span>
+                      )}
+                    </div>
+                    <div className="flex flex-col">
+                      <span className={`text-title-lg font-title-lg ${currentStep === 2 ? 'text-primary font-bold' : 'text-on-surface'}`}>
+                        {language === 'en' ? 'Extracting Important Information' : language === 'hi' ? 'महत्वपूर्ण जानकारी निकाली जा रही है' : 'ଗୁରୁତ୍ୱପୂର୍ଣ୍ଣ ସୂଚନା ବାହାର କରାଯାଉଛି'}
+                      </span>
+                      <span className="text-body-md font-body-md text-on-surface-variant">{t("processing_step_2")}</span>
+                      {currentStep === 2 && (
+                        <div className="mt-4 h-2 bg-surface-container rounded-full overflow-hidden w-full max-w-[200px]">
+                          <div className="h-full bg-primary rounded-full w-1/2 animate-pulse"></div>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex flex-col">
-                    <span className={`text-title-lg font-title-lg ${currentStep === 3 ? 'text-primary font-bold' : 'text-on-surface'}`}>
-                      Preparing Your Profile
-                    </span>
-                    <span className="text-body-md font-body-md text-on-surface-variant">Almost there...</span>
-                    {currentStep === 3 && (
-                      <div className="mt-4 h-2 bg-surface-container rounded-full overflow-hidden w-full max-w-[200px]">
-                        <div className="h-full bg-primary rounded-full w-3/4 animate-pulse"></div>
-                      </div>
-                    )}
-                  </div>
-                </div>
 
+                  {/* Step 4: Preparing Profile */}
+                  <div className={`flex items-start gap-stack-md relative transition-opacity duration-300 ${currentStep < 3 ? 'opacity-50' : 'opacity-100'}`}>
+                    <div className={`absolute left-4 top-[-24px] bottom-[32px] w-[2px] -z-10 transform -translate-x-1/2 ${currentStep > 2 ? 'bg-secondary' : 'bg-surface-variant'}`}></div>
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-1 ${
+                      currentStep === 3 
+                        ? 'bg-primary-container text-on-primary-container' 
+                        : currentStep > 3 
+                          ? 'bg-secondary text-on-secondary' 
+                          : 'border-2 border-outline-variant bg-surface text-outline-variant'
+                    }`}>
+                      {currentStep === 3 ? (
+                        <span className="material-symbols-outlined text-[16px] animate-spin">progress_activity</span>
+                      ) : currentStep > 3 ? (
+                        <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>check</span>
+                      ) : (
+                        <span className="material-symbols-outlined text-[16px]">person</span>
+                      )}
+                    </div>
+                    <div className="flex flex-col">
+                      <span className={`text-title-lg font-title-lg ${currentStep === 3 ? 'text-primary font-bold' : 'text-on-surface'}`}>
+                        {language === 'en' ? 'Preparing Your Profile' : language === 'hi' ? 'आपकी प्रोफ़ाइल तैयार की जा रही है' : 'ଆପଣଙ୍କ ପ୍ରୋଫାଇଲ୍ ପ୍ରସ୍ତୁତ କରାଯାଉଛି'}
+                      </span>
+                      <span className="text-body-md font-body-md text-on-surface-variant">{t("processing_step_3")}</span>
+                      {currentStep === 3 && (
+                        <div className="mt-4 h-2 bg-surface-container rounded-full overflow-hidden w-full max-w-[200px]">
+                          <div className="h-full bg-primary rounded-full w-3/4 animate-pulse"></div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
         </div>
       </main>
     </div>
   );
 };
+export default ProcessingDocuments;
