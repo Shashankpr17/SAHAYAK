@@ -54,6 +54,20 @@ const App: React.FC = () => {
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [uploadedFileSubtype, setUploadedFileSubtype] = useState<string | null>(null);
 
+  const [extractedFiles, setExtractedFiles] = useState<any[]>(() => {
+    const saved = localStorage.getItem('sahayak_extracted_files');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  // Sync extractedFiles to local storage
+  useEffect(() => {
+    if (extractedFiles && extractedFiles.length > 0) {
+      localStorage.setItem('sahayak_extracted_files', JSON.stringify(extractedFiles));
+    } else {
+      localStorage.removeItem('sahayak_extracted_files');
+    }
+  }, [extractedFiles]);
+
   const handleDocumentUploaded = (files: File[], type: DocumentType, subtype: string | null) => {
     setUploadedFiles(files);
     setUploadedFileType(type);
@@ -99,6 +113,7 @@ const App: React.FC = () => {
                 documentType={uploadedFileType} 
                 documentSubtype={uploadedFileSubtype}
                 onProcessingComplete={handleProcessingComplete} 
+                setExtractedFiles={setExtractedFiles}
               />
             </ProtectedRoute>
           } 
@@ -112,6 +127,7 @@ const App: React.FC = () => {
               <ReviewDetails 
                 profile={userProfile} 
                 onProfileUpdated={handleProfileUpdated} 
+                extractedFiles={extractedFiles}
               />
             </ProtectedRoute>
           } 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { DocumentType, UserProfile } from '../types';
 import { extractFields } from '../services/api';
@@ -83,13 +83,17 @@ export const validateIndianState = (state: string | null | undefined): boolean =
   return indianStates.includes(trimmed);
 };
 
-export const validateAddress = (address: string | null | undefined): boolean => {
-  if (!address) return false;
-  const trimmed = address.trim();
-  const letters = trimmed.replace(/[^A-Za-z]/g, '');
-  if (letters.length < 10) return false;
-  const nonAlphanumeric = trimmed.replace(/[A-Za-z0-9\s,\/\.\-]/g, '');
-  return nonAlphanumeric.length / trimmed.length <= 0.25;
+export const validateAddress = (addr: string | null | undefined): boolean => {
+  if (!addr) return false;
+  const trimmed = addr.trim();
+  if (trimmed.length < 10 || trimmed.length > 250) return false;
+  
+  const uppercase = trimmed.toUpperCase();
+  if (uppercase.includes('NOT AVAILABLE') || uppercase.includes('UNKNOWN') || uppercase.includes('N/A')) {
+    return false;
+  }
+  
+  return true;
 };
 
 interface ProcessingDocumentsProps {
@@ -97,23 +101,59 @@ interface ProcessingDocumentsProps {
   documentType: DocumentType | null;
   documentSubtype: string | null;
   onProcessingComplete: (profile: UserProfile) => void;
+  setExtractedFiles: (files: any[]) => void;
 }
 
 export const ProcessingDocuments: React.FC<ProcessingDocumentsProps> = ({
   uploadedFiles,
   documentType,
   documentSubtype,
-  onProcessingComplete
+  onProcessingComplete,
+  setExtractedFiles
 }) => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const { t, language } = useLanguage();
 
+  const propsRef = useRef({
+    uploadedFiles,
+    documentType,
+    documentSubtype,
+    onProcessingComplete,
+    setExtractedFiles,
+    navigate
+  });
+
+  useEffect(() => {
+    propsRef.current = {
+      uploadedFiles,
+      documentType,
+      documentSubtype,
+      onProcessingComplete,
+      setExtractedFiles,
+      navigate
+    };
+  });
+
   useEffect(() => {
     let active = true;
 
     const runSteps = async () => {
+      const {
+        uploadedFiles,
+        documentType,
+        documentSubtype,
+        onProcessingComplete,
+        setExtractedFiles,
+        navigate
+      } = propsRef.current;
+
+      console.log('[PIPELINE_STARTED]');
+      uploadedFiles.forEach((file, idx) => {
+        console.log(`[FILE_${idx + 1}_EXTRACTION_STARTED] Reading ${file.name}`);
+      });
+
       // Step 0: Uploading Files (simulated transition delay)
       if (!active) return;
       await new Promise((r) => setTimeout(r, 1000));
@@ -122,7 +162,6 @@ export const ProcessingDocuments: React.FC<ProcessingDocumentsProps> = ({
       if (!active) return;
       setCurrentStep(1);
       
-      // Call backend api/documents/extract-fields
       try {
         console.log(`[DATA FLOW] Initiating backend API call POST /api/documents/extract-fields`);
         const result = await extractFields(uploadedFiles, documentType || 'ID Proof', documentSubtype || undefined);
@@ -131,9 +170,46 @@ export const ProcessingDocuments: React.FC<ProcessingDocumentsProps> = ({
         if (!active) return;
 
         if (result.success && result.extracted_data) {
+          console.log('[ALL_EXTRACTION_COMPLETED]');
+          
+          // Log each file status
+          if (result.extracted_files) {
+            result.extracted_files.forEach((file: any, idx: number) => {
+              const fileNum = idx + 1;
+              if (file.status === 'success') {
+                console.log(`[FILE_${fileNum}_EXTRACTION_COMPLETED] ${file.filename} extraction succeeded.`);
+              } else {
+                console.log(`[FILE_${fileNum}_EXTRACTION_FAILED] ${file.filename} extraction failed.`);
+              }
+            });
+          } else {
+            uploadedFiles.forEach((file, idx) => {
+              console.log(`[FILE_${idx + 1}_EXTRACTION_COMPLETED] ${file.name} extraction succeeded.`);
+            });
+          }
+
+          console.log('[LLM_PROCESSING_STARTED] Performing document LLM parsing integration...');
+          
+          // Store raw extracted files list in state
+          if (result.extracted_files) {
+            setExtractedFiles(result.extracted_files);
+          } else if (result.raw_text) {
+            // Fallback: package combined text as a single file item
+            setExtractedFiles([{
+              filename: uploadedFiles.length > 0 ? uploadedFiles[0].name : 'Uploaded Document',
+              file_type: uploadedFiles.length > 0 ? uploadedFiles[0].type : 'image/jpeg',
+              text: result.raw_text,
+              status: 'success',
+              metadata: {}
+            }]);
+          }
+
           // Step 2: Extracting Info
           setCurrentStep(2);
           await new Promise((r) => setTimeout(r, 1200));
+
+          console.log('[LLM_PROCESSING_COMPLETED] LLM profile processing complete.');
+          console.log('[VALIDATION_STARTED] Validating extracted profile properties...');
 
           // Step 3: Preparing Profile
           if (!active) return;
@@ -154,7 +230,7 @@ export const ProcessingDocuments: React.FC<ProcessingDocumentsProps> = ({
           let notice = null;
 
           if (!isNameValid && nameVal) {
-            console.log(`[VALIDATION FALLBACK] Name '${nameVal}' failed strict check. Clearing value for review.`);
+            console.log(`[VALIDATION_FALLBACK] Name '${nameVal}' failed strict check. Clearing value for review.`);
             notice = {
               type: 'warning',
               message: 'Some details could not be confidently extracted. Please review and edit them.'
@@ -162,7 +238,7 @@ export const ProcessingDocuments: React.FC<ProcessingDocumentsProps> = ({
           }
 
           if (!isDobValid && dobVal) {
-            console.log(`[VALIDATION FALLBACK] DOB '${dobVal}' failed validation. Clearing value for review.`);
+            console.log(`[VALIDATION_FALLBACK] DOB '${dobVal}' failed validation. Clearing value for review.`);
             notice = {
               type: 'warning',
               message: 'Some details could not be confidently extracted. Please review and edit them.'
@@ -205,13 +281,20 @@ export const ProcessingDocuments: React.FC<ProcessingDocumentsProps> = ({
             pinCode: result.extracted_data.pin_code || undefined
           };
 
+          console.log('[VALIDATION_COMPLETED] Mapping user profile:', mappedProfile);
+          console.log('[PROFILE_PREPARATION_STARTED] Preparing profile for ReviewDetails page...');
           onProcessingComplete(mappedProfile);
+          console.log('[PROFILE_PREPARATION_COMPLETED] Profile prepared successfully.');
+
+          console.log('[NAVIGATION_TO_REVIEW] Heading to review page');
           navigate('/review');
         } else {
+          console.log('[LLM_PROCESSING_FAILED] Backend reported failure.');
           setError('Failed to extract information from documents.');
         }
       } catch (err: any) {
-        console.error('Error during field extraction:', err);
+        console.error('[LLM_PROCESSING_FAILED] Error during field extraction:', err);
+        console.log('[VALIDATION_FAILED] Validation aborted due to processing errors.');
         if (active) {
           setError(err.message || 'An error occurred during document processing.');
         }
@@ -223,7 +306,7 @@ export const ProcessingDocuments: React.FC<ProcessingDocumentsProps> = ({
     return () => {
       active = false;
     };
-  }, [uploadedFiles, documentType, documentSubtype, navigate, onProcessingComplete]);
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-on-surface">

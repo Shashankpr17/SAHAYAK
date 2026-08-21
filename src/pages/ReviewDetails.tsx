@@ -10,9 +10,10 @@ import { useLanguage } from '../context/LanguageContext';
 interface ReviewDetailsProps {
   profile: UserProfile | null;
   onProfileUpdated: (updatedProfile: UserProfile) => void;
+  extractedFiles?: any[];
 }
 
-export const ReviewDetails: React.FC<ReviewDetailsProps> = ({ profile, onProfileUpdated }) => {
+export const ReviewDetails: React.FC<ReviewDetailsProps> = ({ profile, onProfileUpdated, extractedFiles }) => {
   const navigate = useNavigate();
   const { t, language } = useLanguage();
   
@@ -880,6 +881,61 @@ export const ReviewDetails: React.FC<ReviewDetailsProps> = ({ profile, onProfile
               </div>
             </form>
           </div>
+
+          {/* Extracted Documents Section */}
+          {extractedFiles && extractedFiles.length > 0 && (
+            <div className="bg-surface-container-lowest rounded-xl p-6 border border-outline-variant/30 shadow-sm mt-4 animate-fade-in">
+              <h3 className="text-on-surface font-bold text-lg mb-4 border-b border-outline-variant pb-2 flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary">description</span>
+                <span>
+                  {language === 'en' ? 'Extracted Document Content' : language === 'hi' ? 'निकाली गई दस्तावेज़ सामग्री' : 'ଦସ୍ତାବିଜରୁ ବାହାର କରାଯାଇଥିବା ତଥ୍ୟ'}
+                </span>
+              </h3>
+              
+              <div className="space-y-4">
+                {extractedFiles.map((file, idx) => (
+                  <div key={idx} className="border border-outline-variant/20 rounded-xl p-4 bg-surface-container-low">
+                    <div className="flex items-center justify-between border-b border-outline-variant/10 pb-2 mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-on-surface-variant text-base">
+                          {file.file_type?.includes('pdf') ? 'picture_as_pdf' : 'image'}
+                        </span>
+                        <span className="font-title-md font-semibold text-on-surface text-sm truncate max-w-xs md:max-w-md">
+                          {file.filename}
+                        </span>
+                      </div>
+                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                        file.status === 'success' 
+                          ? 'bg-success-container/20 text-success' 
+                          : 'bg-error-container/20 text-error'
+                      }`}>
+                        {file.status === 'success' 
+                          ? (language === 'en' ? 'Success' : language === 'hi' ? 'सफल' : 'ସଫଳ') 
+                          : (language === 'en' ? 'Failed' : language === 'hi' ? 'विफल' : 'ବିଫଳ')}
+                      </span>
+                    </div>
+
+                    {file.status === 'success' ? (
+                      <div className="mt-2 text-xs font-body-sm text-on-surface-variant whitespace-pre-wrap leading-relaxed max-h-48 overflow-y-auto bg-surface-container-lowest p-3 rounded-lg border border-outline-variant/10 font-mono">
+                        {file.text}
+                      </div>
+                    ) : (
+                      <div className="mt-2 text-xs font-body-sm text-error/80 flex items-center gap-1.5 p-2 bg-error-container/10 rounded-lg">
+                        <span className="material-symbols-outlined text-sm">warning</span>
+                        <span>
+                          {language === 'en' 
+                            ? 'Failed to extract readable text from this file.' 
+                            : language === 'hi' 
+                              ? 'इस फ़ाइल से पठनीय पाठ निकालने में विफल।' 
+                              : 'ଏହି ଫାଇଲରୁ ପଠନଯୋଗ୍ୟ ତଥ୍ୟ ବାହାର କରିବାରେ ବିଫଳ |'}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Privacy Note */}
           <div className="flex justify-center items-center gap-2 mt-8 text-on-surface-variant opacity-80">

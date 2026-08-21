@@ -35,6 +35,7 @@ export interface ExtractedFieldsResponse {
     pin_code?: string | null;
   };
   confidence_data?: any;
+  extracted_files?: any[];
 }
 
 export interface ProfileResponse {

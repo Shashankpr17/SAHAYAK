@@ -64,6 +64,7 @@ def extract_document_intelligence_pipeline(
     extracted_profiles = []
     document_types = []
     debug_summaries = []
+    extracted_files_meta = []
 
     for filename, file_bytes in files_to_process:
         file_ext = Path(filename).suffix.lower()
@@ -83,6 +84,30 @@ def extract_document_intelligence_pipeline(
             mime_type=mime_type,
             document_subtype=document_subtype,
         )
+
+        doc_summary = ""
+        if raw_gemini:
+            doc_type = raw_gemini.get("documentType", "Unknown")
+            personal = raw_gemini.get("personal", {})
+            identity = raw_gemini.get("identity", {})
+            address = raw_gemini.get("address", {})
+            doc_summary = (
+                f"Document Type: {doc_type}\n"
+                f"Name: {personal.get('fullName') or 'None'}\n"
+                f"DOB: {personal.get('dateOfBirth') or 'None'}\n"
+                f"Gender: {personal.get('gender') or 'None'}\n"
+                f"Address: {address.get('fullAddress') or 'None'}"
+            )
+        
+        extracted_files_meta.append({
+            "filename": filename,
+            "file_type": mime_type,
+            "text": doc_summary or "Failed to extract readable content.",
+            "status": "success" if raw_gemini else "failed",
+            "metadata": {
+                "document_type": raw_gemini.get("documentType", "Unknown") if raw_gemini else "Unknown"
+            }
+        })
 
         if not raw_gemini:
             print(f"[DOCUMENT AI] WARNING: Gemini extraction failed for {filename}")
@@ -202,4 +227,5 @@ def extract_document_intelligence_pipeline(
         "confidence_data": confidence_data,
         "combined_text": combined_text,
         "document_types": document_types,
+        "extracted_files": extracted_files_meta,
     }

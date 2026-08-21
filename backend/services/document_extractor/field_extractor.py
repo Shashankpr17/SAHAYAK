@@ -301,7 +301,7 @@ def validate_gemini_response(data: Dict[str, Any]) -> Dict[str, Any]:
         return validated
 
     # 1. Validate full name
-    raw_name = data.get("fullName")
+    raw_name = data.get("fullName") or data.get("full_name")
     if raw_name and isinstance(raw_name, str):
         raw_name = raw_name.strip()
         # Clean non-alphabetic characters
@@ -319,12 +319,9 @@ def validate_gemini_response(data: Dict[str, Any]) -> Dict[str, Any]:
             print(f"[SAHAYAK VALIDATOR] Rejected name due to symbols/prohibited words: {raw_name}")
 
     # 2. Validate DOB (Label-aware validation)
-    raw_dob = data.get("dateOfBirth")
-    dob_label = data.get("dateOfBirthLabel")
-    dob_conf = data.get("dateOfBirthConfidence")
-    
-    # Log raw date candidates inside payload for debugging
-    all_dates = re.findall(r'\b\d{1,2}[/\.\-]\d{1,2}[/\.\-]\d{4}\b', str(data))
+    raw_dob = data.get("dateOfBirth") or data.get("date_of_birth")
+    dob_label = data.get("dateOfBirthLabel") or data.get("date_of_birth_label")
+    dob_conf = data.get("dateOfBirthConfidence") or data.get("date_of_birth_confidence")
     
     dob_valid = False
     validated_dob = None
@@ -339,11 +336,11 @@ def validate_gemini_response(data: Dict[str, Any]) -> Dict[str, Any]:
             
             if is_valid_calendar_date(day, month, year):
                 # Verify label contains target sub-string match
-                allowed_labels = ["dob", "date of birth", "जन्म तिथि", "birth", "date_of_birth"]
-                lbl_lower = str(dob_label).strip().lower() if dob_label else ""
+                allowed_labels = ["dob", "date of birth", "जन्म तिथि", "birth", "date_of_birth", "d.o.b."]
+                lbl_lower = str(dob_label).strip().lower() if dob_label else None
                 
-                label_ok = any(l in lbl_lower for l in allowed_labels)
-                conf_ok = isinstance(dob_conf, (int, float)) and dob_conf >= 70
+                label_ok = (lbl_lower is None) or any(l in lbl_lower for l in allowed_labels)
+                conf_ok = (dob_conf is None) or (isinstance(dob_conf, (int, float)) and dob_conf >= 70)
                 
                 if label_ok and conf_ok:
                     validated_dob = f"{day:02d}/{month:02d}/{year}"
@@ -359,10 +356,9 @@ def validate_gemini_response(data: Dict[str, Any]) -> Dict[str, Any]:
         validated["date_of_birth"] = None
 
     # Print debugging metrics exactly as requested by test requirements
-    print(f"Document type: {data.get('documentType', 'Unknown')}")
-    print(f"Raw Gemini JSON response: {data}")
+    print(f"Document type: {data.get('documentType') or data.get('document_type', 'Unknown')}")
     print(f"Extracted DOB: {raw_dob if raw_dob else 'None'}")
-    print(f"DOB confidence: {'high' if isinstance(dob_conf, (int, float)) and dob_conf >= 70 else 'low'}")
+    print(f"DOB confidence: {'high' if dob_conf is None or (isinstance(dob_conf, (int, float)) and dob_conf >= 70) else 'low'}")
     print(f"DOB validation: {'passed' if dob_valid else 'failed'}")
 
     # 3. Validate State
@@ -400,7 +396,7 @@ def validate_gemini_response(data: Dict[str, Any]) -> Dict[str, Any]:
         else:
             validated["gender"] = raw_gender.strip()
 
-    raw_father = data.get("fatherName")
+    raw_father = data.get("fatherName") or data.get("father_name") or data.get("father_or_husband_name")
     if raw_father and isinstance(raw_father, str):
         raw_father = raw_father.strip()
         clean_f = re.sub(r"[^A-Za-z\s\.]", "", raw_father)
@@ -408,7 +404,7 @@ def validate_gemini_response(data: Dict[str, Any]) -> Dict[str, Any]:
         if len(clean_f) >= 3:
             validated["father_name"] = clean_f
 
-    raw_mother = data.get("motherName")
+    raw_mother = data.get("motherName") or data.get("mother_name")
     if raw_mother and isinstance(raw_mother, str):
         raw_mother = raw_mother.strip()
         clean_m = re.sub(r"[^A-Za-z\s\.]", "", raw_mother)
@@ -416,29 +412,29 @@ def validate_gemini_response(data: Dict[str, Any]) -> Dict[str, Any]:
         if len(clean_m) >= 3:
             validated["mother_name"] = clean_m
 
-    raw_bg = data.get("bloodGroup")
+    raw_bg = data.get("bloodGroup") or data.get("blood_group")
     if raw_bg and isinstance(raw_bg, str):
         bg_match = re.search(r"\b(A|B|AB|O)[\s]*[\+\-]\b", raw_bg, re.IGNORECASE)
         if bg_match:
             validated["blood_group"] = raw_bg.strip().upper()
 
-    raw_aadhaar = data.get("aadhaarNumber")
+    raw_aadhaar = data.get("aadhaarNumber") or data.get("aadhaar_number")
     if raw_aadhaar and isinstance(raw_aadhaar, str):
         digits = re.sub(r"\D", "", raw_aadhaar)
         if len(digits) == 12:
             validated["aadhaar_number"] = digits
 
-    raw_pan = data.get("panNumber")
+    raw_pan = data.get("panNumber") or data.get("pan_number")
     if raw_pan and isinstance(raw_pan, str):
         pan_clean = re.sub(r"[^A-Za-z0-9]", "", raw_pan).strip().upper()
         if len(pan_clean) == 10:
             validated["pan_number"] = pan_clean
 
-    raw_dl = data.get("drivingLicenceNumber")
+    raw_dl = data.get("drivingLicenceNumber") or data.get("driving_licence_number") or data.get("driving_license_number")
     if raw_dl and isinstance(raw_dl, str):
         validated["driving_licence_number"] = raw_dl.strip().upper()
 
-    raw_voter = data.get("voterIdNumber")
+    raw_voter = data.get("voterIdNumber") or data.get("voter_id_number")
     if raw_voter and isinstance(raw_voter, str):
         validated["voter_id_number"] = raw_voter.strip().upper()
 
@@ -446,17 +442,19 @@ def validate_gemini_response(data: Dict[str, Any]) -> Dict[str, Any]:
     if raw_district and isinstance(raw_district, str):
         validated["district"] = raw_district.strip()
 
-    raw_pin = data.get("pinCode")
+    raw_pin = data.get("pinCode") or data.get("pin_code") or data.get("pincode")
     if raw_pin and isinstance(raw_pin, str):
         pin_digits = re.sub(r"\D", "", raw_pin)
         if len(pin_digits) == 6:
             validated["pin_code"] = pin_digits
 
     # 6. Populate metadata fields
-    if data.get("annualIncome"):
-        validated["annual_income"] = str(data["annualIncome"]).strip()
-    if data.get("occupation"):
-        validated["occupation"] = str(data["occupation"]).strip()
+    raw_income = data.get("annualIncome") or data.get("annual_income")
+    if raw_income:
+        validated["annual_income"] = str(raw_income).strip()
+    raw_occ = data.get("occupation")
+    if raw_occ:
+        validated["occupation"] = str(raw_occ).strip()
 
     # Pass confidence block through metadata key
     raw_conf = data.get("confidence", {})
@@ -755,22 +753,91 @@ def extract_full_name(text: str) -> Optional[str]:
 
 
 def extract_date_of_birth(text: str) -> Optional[str]:
-    """Extract Date of Birth (DD/MM/YYYY or YYYY-MM-DD)."""
-    # Prioritize Aadhaar date validation
-    aadhaar_dob = extract_aadhaar_dob(text)
-    if aadhaar_dob:
-        return aadhaar_dob
+    """Extract Date of Birth (DD/MM/YYYY or YYYY-MM-DD) robustly from text."""
+    if not text:
+        return None
 
-    patterns = [
-        r"(?:DOB|Date\s*of\s*Birth|Birth\s*Date)\s*[:\-]?\s*(\d{2}[/\.\-]\d{2}[/\.\-]\d{4})",
-        r"(?:DOB|Date\s*of\s*Birth|Birth\s*Date)\s*[:\-]?\s*(\d{4}[/\.\-]\d{2}[/\.\-]\d{2})",
-        r"\b(\d{2}[/\.\-]\d{2}[/\.\-]\d{4})\b",
-    ]
-    for pattern in patterns:
-        match = re.search(pattern, text, re.IGNORECASE)
-        if match:
-            return match.group(1).strip()
-    return None
+    # Find all date patterns
+    candidates = []
+    
+    # Pattern 1: DD/MM/YYYY or similar
+    pattern_dd_mm = re.finditer(r"\b(\d{1,2})[/\.\-](\d{1,2})[/\.\-](\d{4})\b", text)
+    for match in pattern_dd_mm:
+        d, m, y = match.group(1), match.group(2), match.group(3)
+        day, month, year = int(d), int(m), int(y)
+        if 1 <= day <= 31 and 1 <= month <= 12 and 1900 <= year <= 2026:
+            norm_date = f"{day:02d}/{month:02d}/{year}"
+            candidates.append((norm_date, match.start(), match.end()))
+
+    # Pattern 2: YYYY-MM-DD or similar
+    pattern_yyyy_mm = re.finditer(r"\b(\d{4})[/\.\-](\d{1,2})[/\.\-](\d{1,2})\b", text)
+    for match in pattern_yyyy_mm:
+        y, m, d = match.group(1), match.group(2), match.group(3)
+        year, month, day = int(y), int(m), int(d)
+        if 1900 <= year <= 2026 and 1 <= month <= 12 and 1 <= day <= 31:
+            norm_date = f"{day:02d}/{month:02d}/{year}"
+            candidates.append((norm_date, match.start(), match.end()))
+
+    # Deduplicate candidates while keeping order
+    unique_candidates = []
+    seen = set()
+    for date_str, start, end in candidates:
+        if date_str not in seen:
+            seen.add(date_str)
+            unique_candidates.append((date_str, start, end))
+
+    if not unique_candidates:
+        return None
+
+    # Score each unique candidate based on its context window
+    scored_candidates = []
+    print("\n[SAHAYAK DOB DEBUG] Raw OCR text:")
+    print(text)
+    print("\n[SAHAYAK DOB DEBUG] DOB candidates details:")
+    
+    for date_str, start, end in unique_candidates:
+        # Check window
+        w_start = max(0, start - 60)
+        w_end = min(len(text), end + 30)
+        window = text[w_start:w_end].lower()
+
+        dob_words = ["dob", "date of birth", "birth", "d.o.b.", "जन्म", "janma", "tithi", "जन्मतिथि"]
+        issue_words = ["issue", "issued", "issuance", "जारी", "pradan", "date of issue", "issue date", "dt of issue", "generation", "enrolment", "enrollment", "generated", "updated"]
+
+        has_dob = any(w in window for w in dob_words)
+        is_issue = any(w in window for w in issue_words)
+
+        if has_dob and not is_issue:
+            score = 3
+            reason = "Explicit DOB label context"
+        elif is_issue and not has_dob:
+            score = -1
+            reason = "Probable issue/unrelated date context (rejected)"
+        elif is_issue and has_dob:
+            score = 0
+            reason = "Mixed context (both DOB and issue labels found)"
+        else:
+            score = 1
+            reason = "Neutral/No explicit labels"
+
+        scored_candidates.append({
+            "val": date_str,
+            "score": score,
+            "reason": reason
+        })
+        print(f"Candidate: {date_str} (Score: {score}, Reason: {reason})")
+
+    # Sort candidates by score descending
+    scored_candidates.sort(key=lambda x: x["score"], reverse=True)
+    
+    # Filter candidates: must have score > 0 (to reject issue dates)
+    best_candidate = None
+    if scored_candidates:
+        if scored_candidates[0]["score"] > 0:
+            best_candidate = scored_candidates[0]["val"]
+            
+    print(f"[SAHAYAK DOB DEBUG] Selected DOB: {best_candidate}")
+    return best_candidate
 
 
 def extract_state(text: str) -> Optional[str]:
@@ -892,6 +959,91 @@ def extract_occupation(text: str) -> Optional[str]:
     return None
 
 
+def extract_aadhaar_number_from_text(text: str) -> Optional[str]:
+    """Find any valid 12-digit Aadhaar number pattern (with spaces, dashes, or continuous digits) in the text."""
+    if not text:
+        return None
+    patterns = [
+        r"\b\d{4}\s\d{4}\s\d{4}\b",
+        r"\b\d{4}-\d{4}-\d{4}\b",
+        r"\b\d{12}\b"
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, text)
+        if match:
+            # Normalize digits
+            digits = re.sub(r"\D", "", match.group(0))
+            if len(digits) == 12:
+                return digits
+    return None
+
+
+def check_date_candidate_context(date_str: str, text: str) -> dict:
+    """Analyze context around a date string inside the document raw text.
+    Returns a dict with metadata: {
+        'is_issue': bool,
+        'has_dob_lbl': bool,
+        'score': int,
+        'reason': str
+    }
+    """
+    if not date_str or not text:
+        return {'is_issue': False, 'has_dob_lbl': False, 'score': 1, 'reason': 'No context text available'}
+
+    # Normalize delimiters in date string to search in text
+    date_normalized = re.sub(r"[/\.\-]", "", date_str)
+    day, month, year = None, None, None
+    if len(date_normalized) == 8:
+        if date_str[2] in '/.-':
+            day, month, year = date_str[:2], date_str[3:5], date_str[6:]
+        elif date_str[4] in '/.-':
+            year, month, day = date_str[:4], date_str[5:7], date_str[8:]
+
+    if day and month and year:
+        # Match dates with various space/delimiter formats (e.g. 17-06-2005 or 17/06/2005)
+        pattern = rf"\b{day}[\s/\.\-]*{month}[\s/\.\-]*{year}\b|\b{year}[\s/\.\-]*{month}[\s/\.\-]*{day}\b"
+    else:
+        pattern = re.escape(date_str)
+
+    matches = list(re.finditer(pattern, text, re.IGNORECASE))
+    if not matches:
+        return {'is_issue': False, 'has_dob_lbl': False, 'score': 1, 'reason': 'Date pattern not found in raw text'}
+
+    has_dob_lbl = False
+    is_issue = False
+    
+    for match in matches:
+        start = max(0, match.start() - 60)
+        end = min(len(text), match.end() + 30)
+        window = text[start:end].lower()
+
+        dob_words = ["dob", "date of birth", "birth", "d.o.b.", "जन्म", "janma", "tithi", "जन्मतिथि"]
+        issue_words = ["issue", "issued", "issuance", "जारी", "pradan", "date of issue", "issue date", "dt of issue", "generation"]
+
+        dob_match = any(w in window for w in dob_words)
+        issue_match = any(w in window for w in issue_words)
+
+        if dob_match:
+            has_dob_lbl = True
+        if issue_match:
+            is_issue = True
+
+    if has_dob_lbl and not is_issue:
+        score = 3
+        reason = "Explicit DOB label context"
+    elif is_issue and not has_dob_lbl:
+        score = -1
+        reason = "Probable issue/unrelated date context (rejected)"
+    elif is_issue and has_dob_lbl:
+        score = 0
+        reason = "Mixed context (both DOB and issue labels found)"
+    else:
+        score = 1
+        reason = "Neutral/No explicit labels"
+
+    return {'is_issue': is_issue, 'has_dob_lbl': has_dob_lbl, 'score': score, 'reason': reason}
+
+
 def extract_structured_fields(raw_text: str) -> Dict[str, Any]:
     """Extract structured fields from raw OCR text."""
     if not raw_text or not raw_text.strip():
@@ -902,10 +1054,14 @@ def extract_structured_fields(raw_text: str) -> Dict[str, Any]:
             "address": None,
             "annual_income": None,
             "occupation": None,
+            "aadhaar_number": None,
         }
 
     # Clean the OCR text
     cleaned_text = clean_ocr_text(raw_text)
+    
+    # Extract Aadhaar number from unmasked text first
+    aadhaar_num = extract_aadhaar_number_from_text(cleaned_text)
     
     # Mask/remove Aadhaar numbers for security
     secured_text = mask_aadhaar_number(cleaned_text)
@@ -923,6 +1079,7 @@ def extract_structured_fields(raw_text: str) -> Dict[str, Any]:
         "address": extract_address(secured_text),
         "annual_income": extract_annual_income(secured_text),
         "occupation": extract_occupation(secured_text),
+        "aadhaar_number": aadhaar_num,
     }
 
     # Extract gender separately if Aadhaar
@@ -934,7 +1091,9 @@ def extract_structured_fields(raw_text: str) -> Dict[str, Any]:
 
 
 def merge_extracted_profiles(datasets: List[Dict[str, Any]], combined_text: str) -> Dict[str, Any]:
-    """Intelligently combine profile datasets following preference merging rules."""
+    """Intelligently combine profile datasets following preference merging rules,
+    with explicit field-specific validation and scoring logic.
+    """
     merged = {
         "full_name": None,
         "date_of_birth": None,
@@ -954,126 +1113,368 @@ def merge_extracted_profiles(datasets: List[Dict[str, Any]], combined_text: str)
         "occupation": None,
     }
 
-    for data in datasets:
-        if not data:
-            continue
+    # Debug Log Header
+    print("\n" + "="*50)
+    print("[SAHAYAK MERGE DEBUG] Starting Multi-Document Field merging...")
+    print(f"[SAHAYAK MERGE DEBUG] Datasets to merge count: {len(datasets)}")
+    for idx, ds in enumerate(datasets):
+        source = ds.get("_source_file", "unknown")
+        print(f"  - Dataset {idx + 1} source: '{source}'")
+    print("="*50 + "\n")
+
+    # Helper function to print debug details for a field
+    def log_field_selection(field_name: str, candidates_info: list, selected_val: Any):
+        print(f"[SAHAYAK MERGE DEBUG] Merging field: '{field_name}'")
+        if not candidates_info:
+            print("  - No candidates found.")
+        else:
+            for c in candidates_info:
+                print(f"  - Candidate: '{c['val']}' from '{c['source']}' | Reason/Score: {c['reason']} | Decision: {c['decision']}")
+        print(f"  Selected Final Value: '{selected_val}'\n")
+
+    # 1. Merge full_name
+    name_candidates = []
+    for ds in datasets:
+        val = ds.get("full_name")
+        source = ds.get("_source_file", "unknown")
+        if val and is_valid_name_candidate(val):
+            # Prioritize based on length and count of words
+            score = len(val.split()) * 10 + len(val)
+            name_candidates.append({
+                "val": val,
+                "source": source,
+                "score": score,
+                "reason": f"words_count={len(val.split())}, length={len(val)} (score={score})"
+            })
+    
+    selected_name = None
+    if name_candidates:
+        # Sort by score descending
+        name_candidates.sort(key=lambda x: x["score"], reverse=True)
+        # Mark decisions
+        for i, c in enumerate(name_candidates):
+            c["decision"] = "SELECTED" if i == 0 else "REJECTED (Lower priority/shorter name)"
+        selected_name = name_candidates[0]["val"]
+    log_field_selection("full_name", name_candidates, selected_name)
+    merged["full_name"] = selected_name
+
+    # 2. Merge date_of_birth
+    dob_candidates = []
+    for ds in datasets:
+        val = ds.get("date_of_birth")
+        source = ds.get("_source_file", "unknown")
+        if val:
+            # Check context
+            ctx = check_date_candidate_context(val, combined_text)
+            dob_candidates.append({
+                "val": val,
+                "source": source,
+                "score": ctx["score"],
+                "reason": f"context_score={ctx['score']} ({ctx['reason']})"
+            })
             
-        # Merge Name: Prefer longer / more words
-        name = data.get("full_name")
-        if name and is_valid_name_candidate(name):
-            if not merged["full_name"]:
-                merged["full_name"] = name
-            elif len(name.split()) > len(merged["full_name"].split()):
-                merged["full_name"] = name
+    selected_dob = None
+    if dob_candidates:
+        # Sort by context score descending
+        dob_candidates.sort(key=lambda x: x["score"], reverse=True)
+        # If the highest score is <= 0 (e.g. is_issue context), we do NOT select it
+        if dob_candidates[0]["score"] > 0:
+            selected_dob = dob_candidates[0]["val"]
+            for i, c in enumerate(dob_candidates):
+                if i == 0:
+                    c["decision"] = "SELECTED"
+                else:
+                    c["decision"] = "REJECTED (Lower priority/score)"
+        else:
+            for c in dob_candidates:
+                c["decision"] = "REJECTED (Suspected issue/unrelated date context)"
+    log_field_selection("date_of_birth", dob_candidates, selected_dob)
+    merged["date_of_birth"] = selected_dob
 
-        # Merge DOB
-        dob = data.get("date_of_birth")
-        if dob:
-            if not merged["date_of_birth"]:
-                merged["date_of_birth"] = dob
+    # 3. Merge Gender
+    gender_candidates = []
+    for ds in datasets:
+        val = ds.get("gender")
+        source = ds.get("_source_file", "unknown")
+        if val:
+            gender_candidates.append({
+                "val": val,
+                "source": source,
+                "score": 1,
+                "reason": "Direct extraction",
+                "decision": "SELECTED" if not gender_candidates else "REJECTED (Value already set)"
+            })
+    selected_gender = gender_candidates[0]["val"] if gender_candidates else None
+    log_field_selection("gender", gender_candidates, selected_gender)
+    merged["gender"] = selected_gender
 
-        # Merge Gender
-        gender = data.get("gender")
-        if gender:
-            if not merged["gender"]:
-                merged["gender"] = gender
+    # 4. Merge Father Name
+    father_candidates = []
+    for ds in datasets:
+        val = ds.get("father_name")
+        source = ds.get("_source_file", "unknown")
+        if val:
+            score = len(val)
+            father_candidates.append({
+                "val": val,
+                "source": source,
+                "score": score,
+                "reason": f"length={len(val)}",
+            })
+    selected_father = None
+    if father_candidates:
+        father_candidates.sort(key=lambda x: x["score"], reverse=True)
+        for i, c in enumerate(father_candidates):
+            c["decision"] = "SELECTED" if i == 0 else "REJECTED (Shorter candidate)"
+        selected_father = father_candidates[0]["val"]
+    log_field_selection("father_name", father_candidates, selected_father)
+    merged["father_name"] = selected_father
 
-        # Merge Father's Name
-        fn = data.get("father_name")
-        if fn:
-            if not merged["father_name"]:
-                merged["father_name"] = fn
-            elif len(fn) > len(merged["father_name"]):
-                merged["father_name"] = fn
+    # 5. Merge Mother Name
+    mother_candidates = []
+    for ds in datasets:
+        val = ds.get("mother_name")
+        source = ds.get("_source_file", "unknown")
+        if val:
+            score = len(val)
+            mother_candidates.append({
+                "val": val,
+                "source": source,
+                "score": score,
+                "reason": f"length={len(val)}",
+            })
+    selected_mother = None
+    if mother_candidates:
+        mother_candidates.sort(key=lambda x: x["score"], reverse=True)
+        for i, c in enumerate(mother_candidates):
+            c["decision"] = "SELECTED" if i == 0 else "REJECTED (Shorter candidate)"
+        selected_mother = mother_candidates[0]["val"]
+    log_field_selection("mother_name", mother_candidates, selected_mother)
+    merged["mother_name"] = selected_mother
 
-        # Merge Mother's Name
-        mn = data.get("mother_name")
-        if mn:
-            if not merged["mother_name"]:
-                merged["mother_name"] = mn
-            elif len(mn) > len(merged["mother_name"]):
-                merged["mother_name"] = mn
+    # 6. Merge Blood Group
+    bg_candidates = []
+    for ds in datasets:
+        val = ds.get("blood_group")
+        source = ds.get("_source_file", "unknown")
+        if val:
+            bg_candidates.append({
+                "val": val,
+                "source": source,
+                "score": 1,
+                "reason": "Direct match",
+                "decision": "SELECTED" if not bg_candidates else "REJECTED (Value already set)"
+            })
+    selected_bg = bg_candidates[0]["val"] if bg_candidates else None
+    log_field_selection("blood_group", bg_candidates, selected_bg)
+    merged["blood_group"] = selected_bg
 
-        # Merge Blood Group
-        bg = data.get("blood_group")
-        if bg:
-            if not merged["blood_group"]:
-                merged["blood_group"] = bg
+    # 7. Merge Aadhaar Number
+    aadhaar_candidates = []
+    for ds in datasets:
+        val = ds.get("aadhaar_number")
+        source = ds.get("_source_file", "unknown")
+        # Double check if any raw Aadhaar pattern was found in OCR text but not mapped in data
+        if not val and combined_text:
+            val = extract_aadhaar_number_from_text(combined_text)
+            if val:
+                source = "extracted from raw text regex fallback"
+        if val:
+            # Normalize digits
+            digits = re.sub(r"\D", "", val)
+            if len(digits) == 12:
+                aadhaar_candidates.append({
+                    "val": digits,
+                    "source": source,
+                    "score": 1,
+                    "reason": "Valid 12-digit Aadhaar",
+                })
+    selected_aadhaar = None
+    if aadhaar_candidates:
+        for i, c in enumerate(aadhaar_candidates):
+            c["decision"] = "SELECTED" if i == 0 else "REJECTED (Duplicate value)"
+        selected_aadhaar = aadhaar_candidates[0]["val"]
+    log_field_selection("aadhaar_number", aadhaar_candidates, selected_aadhaar)
+    merged["aadhaar_number"] = selected_aadhaar
 
-        # Merge Aadhaar
-        an = data.get("aadhaar_number")
-        if an:
-            if not merged["aadhaar_number"]:
-                merged["aadhaar_number"] = an
+    # 8. Merge PAN Number
+    pan_candidates = []
+    for ds in datasets:
+        val = ds.get("pan_number")
+        source = ds.get("_source_file", "unknown")
+        if val:
+            pan_candidates.append({
+                "val": val,
+                "source": source,
+                "score": 1,
+                "reason": "Valid PAN",
+            })
+    selected_pan = None
+    if pan_candidates:
+        for i, c in enumerate(pan_candidates):
+            c["decision"] = "SELECTED" if i == 0 else "REJECTED (Duplicate value)"
+        selected_pan = pan_candidates[0]["val"]
+    log_field_selection("pan_number", pan_candidates, selected_pan)
+    merged["pan_number"] = selected_pan
 
-        # Merge PAN
-        pn = data.get("pan_number")
-        if pn:
-            if not merged["pan_number"]:
-                merged["pan_number"] = pn
+    # 9. Merge Driving License
+    dl_candidates = []
+    for ds in datasets:
+        val = ds.get("driving_licence_number")
+        source = ds.get("_source_file", "unknown")
+        if val:
+            dl_candidates.append({
+                "val": val,
+                "source": source,
+                "score": 1,
+                "reason": "Valid DL",
+            })
+    selected_dl = None
+    if dl_candidates:
+        for i, c in enumerate(dl_candidates):
+            c["decision"] = "SELECTED" if i == 0 else "REJECTED (Duplicate value)"
+        selected_dl = dl_candidates[0]["val"]
+    log_field_selection("driving_licence_number", dl_candidates, selected_dl)
+    merged["driving_licence_number"] = selected_dl
 
-        # Merge DL
-        dn = data.get("driving_licence_number")
-        if dn:
-            if not merged["driving_licence_number"]:
-                merged["driving_licence_number"] = dn
+    # 10. Merge Voter ID
+    voter_candidates = []
+    for ds in datasets:
+        val = ds.get("voter_id_number")
+        source = ds.get("_source_file", "unknown")
+        if val:
+            voter_candidates.append({
+                "val": val,
+                "source": source,
+                "score": 1,
+                "reason": "Valid Voter ID",
+            })
+    selected_voter = None
+    if voter_candidates:
+        for i, c in enumerate(voter_candidates):
+            c["decision"] = "SELECTED" if i == 0 else "REJECTED (Duplicate value)"
+        selected_voter = voter_candidates[0]["val"]
+    log_field_selection("voter_id_number", voter_candidates, selected_voter)
+    merged["voter_id_number"] = selected_voter
 
-        # Merge Voter ID
-        vn = data.get("voter_id_number")
-        if vn:
-            if not merged["voter_id_number"]:
-                merged["voter_id_number"] = vn
+    # 11. Merge State
+    state_candidates = []
+    for ds in datasets:
+        val = ds.get("state")
+        source = ds.get("_source_file", "unknown")
+        if val:
+            state_candidates.append({
+                "val": val,
+                "source": source,
+                "score": 1,
+                "reason": "Direct state matching",
+                "decision": "SELECTED" if not state_candidates else "REJECTED (State already set)"
+            })
+    selected_state = state_candidates[0]["val"] if state_candidates else None
+    if not selected_state and combined_text:
+        selected_state = extract_state(combined_text)
+    log_field_selection("state", state_candidates, selected_state)
+    merged["state"] = selected_state
 
-        # Merge State
-        state = data.get("state")
-        if state:
-            if not merged["state"]:
-                merged["state"] = state
+    # 12. Merge District
+    dist_candidates = []
+    for ds in datasets:
+        val = ds.get("district")
+        source = ds.get("_source_file", "unknown")
+        if val:
+            dist_candidates.append({
+                "val": val,
+                "source": source,
+                "score": 1,
+                "reason": "District label context",
+                "decision": "SELECTED" if not dist_candidates else "REJECTED (District already set)"
+            })
+    selected_dist = dist_candidates[0]["val"] if dist_candidates else None
+    log_field_selection("district", dist_candidates, selected_dist)
+    merged["district"] = selected_dist
 
-        # Merge District
-        dist = data.get("district")
-        if dist:
-            if not merged["district"]:
-                merged["district"] = dist
+    # 13. Merge Pincode
+    pin_candidates = []
+    for ds in datasets:
+        val = ds.get("pin_code")
+        source = ds.get("_source_file", "unknown")
+        if val:
+            pin_candidates.append({
+                "val": val,
+                "source": source,
+                "score": 1,
+                "reason": "6-digit PIN Match",
+                "decision": "SELECTED" if not pin_candidates else "REJECTED (Pincode already set)"
+            })
+    selected_pin = pin_candidates[0]["val"] if pin_candidates else None
+    log_field_selection("pin_code", pin_candidates, selected_pin)
+    merged["pin_code"] = selected_pin
 
-        # Merge Pincode
-        pin = data.get("pin_code")
-        if pin:
-            if not merged["pin_code"]:
-                merged["pin_code"] = pin
-
-        # Merge Address: Prefer longer meaningful address over shorter pincode strings
-        addr = data.get("address")
-        if addr:
-            cleaned_addr = re.sub(r"[^\w]", "", addr)
+    # 14. Merge Address
+    address_candidates = []
+    for ds in datasets:
+        val = ds.get("address")
+        source = ds.get("_source_file", "unknown")
+        if val:
+            cleaned_addr = re.sub(r"[^\w]", "", val)
             if not cleaned_addr.isdigit():
-                if not merged["address"]:
-                    merged["address"] = addr
-                elif len(addr) > len(merged["address"]):
-                    merged["address"] = addr
-
-        # Merge Income
-        income = data.get("annual_income")
-        if income:
-            if not merged["annual_income"]:
-                merged["annual_income"] = income
-
-        # Merge Occupation
-        occ = data.get("occupation")
-        if occ:
-            if not merged["occupation"]:
-                merged["occupation"] = occ
-
-    # Extract State independently from combined text if still missing
-    if not merged["state"] and combined_text:
-        merged["state"] = extract_state(combined_text)
-
+                score = len(val)
+                address_candidates.append({
+                    "val": val,
+                    "source": source,
+                    "score": score,
+                    "reason": f"address_length={len(val)}"
+                })
+    selected_address = None
+    if address_candidates:
+        address_candidates.sort(key=lambda x: x["score"], reverse=True)
+        for i, c in enumerate(address_candidates):
+            c["decision"] = "SELECTED" if i == 0 else "REJECTED (Shorter address candidate)"
+        selected_address = address_candidates[0]["val"]
+    
     # Ensure final address is not just a pincode
-    if merged["address"]:
-        cleaned = re.sub(r"[^\w]", "", merged["address"])
-        if cleaned.isdigit():
-            merged["address"] = None
+    if selected_address:
+        cleaned_chk = re.sub(r"[^\w]", "", selected_address)
+        if cleaned_chk.isdigit():
+            selected_address = None
+    log_field_selection("address", address_candidates, selected_address)
+    merged["address"] = selected_address
 
+    # 15. Merge Income
+    income_candidates = []
+    for ds in datasets:
+        val = ds.get("annual_income")
+        source = ds.get("_source_file", "unknown")
+        if val:
+            income_candidates.append({
+                "val": val,
+                "source": source,
+                "score": 1,
+                "reason": "Income match",
+                "decision": "SELECTED" if not income_candidates else "REJECTED (Income already set)"
+            })
+    selected_income = income_candidates[0]["val"] if income_candidates else None
+    log_field_selection("annual_income", income_candidates, selected_income)
+    merged["annual_income"] = selected_income
+
+    # 16. Merge Occupation
+    occ_candidates = []
+    for ds in datasets:
+        val = ds.get("occupation")
+        source = ds.get("_source_file", "unknown")
+        if val:
+            occ_candidates.append({
+                "val": val,
+                "source": source,
+                "score": 1,
+                "reason": "Occupation match",
+                "decision": "SELECTED" if not occ_candidates else "REJECTED (Occupation already set)"
+            })
+    selected_occ = occ_candidates[0]["val"] if occ_candidates else None
+    log_field_selection("occupation", occ_candidates, selected_occ)
+    merged["occupation"] = selected_occ
+
+    print("[SAHAYAK MERGE DEBUG] Unified field merging completed.\n" + "="*50)
     return merged
 
 
@@ -1184,17 +1585,94 @@ async def extract_fields_endpoint(
             file_bytes = f.read()
         target_files_to_process.append((name, file_bytes))
 
-    # 2. Extract structured fields (Try Document AI pipeline first, then legacy Gemini, fallback to OCR)
+    # 2. Extract structured fields (Try Groq Qwen, then Document AI pipeline, legacy Gemini, fallback to OCR)
     gemini_datasets = []
     gemini_success = False
     combined_ocr_text = ""
     confidence_data = {}  # May be populated by AI pipeline or computed later
+    extracted_files = []
     
+    # Check if Groq API key is available
+    groq_api_key = os.getenv("GROQ_API_KEY")
+    
+    if groq_api_key:
+        print("[SAHAYAK] Using Groq KYC Extractor pipeline")
+        try:
+            import sys
+            text_extractor_path = str(Path(__file__).resolve().parent.parent.parent.parent / "text extractor")
+            if text_extractor_path not in sys.path:
+                sys.path.append(text_extractor_path)
+            from llm import KYCExtractor
+            
+            extractor = KYCExtractor(api_key=groq_api_key)
+            file_paths = [str(user_upload_dir / name) for name, _ in target_files_to_process]
+            groq_result = extractor.process_documents(file_paths)
+            
+            if groq_result and groq_result.get("consolidated_profile"):
+                groq_datasets = []
+                for doc in groq_result.get("per_document_extractions", []):
+                    if "error" in doc:
+                        continue
+                    mapped_doc = {
+                        "fullName": doc.get("full_name"),
+                        "dateOfBirth": doc.get("date_of_birth"),
+                        "gender": doc.get("gender"),
+                        "fatherName": doc.get("father_or_husband_name"),
+                        "aadhaarNumber": doc.get("aadhaar_number"),
+                        "panNumber": doc.get("pan_number"),
+                        "drivingLicenceNumber": doc.get("driving_license_number"),
+                        "address": doc.get("raw_address_text"),
+                        "state": doc.get("state"),
+                        "district": doc.get("district"),
+                        "pinCode": doc.get("pincode"),
+                        "annualIncome": doc.get("annual_income"),
+                        "occupation": doc.get("designation"),
+                        "_source_file": doc.get("_source_file", "unknown")
+                    }
+                    validated = validate_gemini_response(mapped_doc)
+                    validated["_source_file"] = doc.get("_source_file", "unknown")
+                    groq_datasets.append(validated)
+                
+                # Build extracted_files association list
+                for doc in groq_result.get("per_document_extractions", []):
+                    source = doc.get("_source_file", "unknown")
+                    status_str = "failed" if "error" in doc else "success"
+                    file_ext = Path(source).suffix.lower()
+                    mime_type = "image/jpeg"
+                    if file_ext == ".png":
+                        mime_type = "image/png"
+                    elif file_ext == ".pdf":
+                        mime_type = "application/pdf"
+                    
+                    doc_summary = (
+                        f"Document Type: {doc.get('document_type', 'unknown')}\n"
+                        f"Raw Address: {doc.get('raw_address_text') or 'None'}\n"
+                        f"Notes: {doc.get('extraction_notes') or 'None'}"
+                    )
+                    extracted_files.append({
+                        "filename": source,
+                        "file_type": mime_type,
+                        "text": doc_summary,
+                        "status": status_str,
+                        "metadata": {
+                            "document_type": doc.get("document_type"),
+                            "confidence": doc.get("document_type_confidence")
+                        }
+                    })
+                
+                combined_ocr_text = "\n\n".join([item["text"] for item in extracted_files])
+                final_merged_profile = merge_extracted_profiles(groq_datasets, combined_ocr_text)
+                gemini_success = True
+                print("[SAHAYAK] Groq KYC Extractor completed successfully")
+        except Exception as groq_err:
+            print(f"[SAHAYAK WARNING] Groq KYC Extractor failed: {groq_err}")
+            gemini_success = False
+
     # Check if Gemini key is available
     api_key = os.getenv("GEMINI_API_KEY")
     
-    # ━━━ NEW: Try the modular Document AI pipeline first ━━━
-    if api_key and _AI_PIPELINE_AVAILABLE:
+    # ━━━ NEW: Try the modular Document AI pipeline first (if Groq didn't run/succeed) ━━━
+    if api_key and _AI_PIPELINE_AVAILABLE and not gemini_success:
         print("[SAHAYAK] Using intelligent Document AI pipeline")
         try:
             ai_result = _ai_pipeline(
@@ -1209,6 +1687,7 @@ async def extract_fields_endpoint(
                 
                 # Build confidence data from the AI pipeline's output
                 confidence_data = ai_result.get("confidence_data", {})
+                extracted_files = ai_result.get("extracted_files", [])
                 
                 print("[SAHAYAK] Document AI pipeline completed successfully")
         except Exception as ai_err:
@@ -1216,7 +1695,7 @@ async def extract_fields_endpoint(
             print("[SAHAYAK] Falling back to legacy Gemini extraction...")
             gemini_success = False
 
-    # ━━━ LEGACY: Fall back to old Gemini extraction if AI pipeline didn't succeed ━━━
+    # ━━━ LEGACY: Fall back to old Gemini extraction if AI pipeline/Groq didn't succeed ━━━
     if api_key and not gemini_success:
         print("[SAHAYAK] Using legacy Gemini extraction")
         for name, f_bytes in target_files_to_process:
@@ -1268,15 +1747,42 @@ async def extract_fields_endpoint(
             except ImportError:
                 pass
 
+            # Map legacy files
+            for i, (name, _) in enumerate(target_files_to_process):
+                file_ext = Path(name).suffix.lower()
+                mime_type = "image/jpeg"
+                if file_ext == ".png":
+                    mime_type = "image/png"
+                elif file_ext == ".pdf":
+                    mime_type = "application/pdf"
+                
+                ds = gemini_datasets[i] if i < len(gemini_datasets) else {}
+                extracted_files.append({
+                    "filename": name,
+                    "file_type": mime_type,
+                    "text": fields_summary[i] if i < len(fields_summary) else "No data.",
+                    "status": "success" if ds else "failed",
+                    "metadata": {
+                        "document_type": ds.get("document_type")
+                    }
+                })
+
             print("[SAHAYAK] Legacy Gemini extraction completed")
 
     # Fallback to local OCR pipeline if Gemini fails or key is missing
     if not gemini_success:
-        print("[SAHAYAK WARNING] Gemini API key not found or call failed. Falling back to local OCR pipeline.")
+        print("[SAHAYAK WARNING] Gemini/Groq keys not found or call failed. Falling back to local OCR pipeline.")
         extracted_texts_list = []
         for name, f_bytes in target_files_to_process:
             file_ext = Path(name).suffix.lower()
+            mime_type = "image/jpeg"
+            if file_ext == ".png":
+                mime_type = "image/png"
+            elif file_ext == ".pdf":
+                mime_type = "application/pdf"
+            
             extracted_txt = ""
+            status_str = "failed"
             try:
                 if file_ext in [".jpg", ".jpeg", ".png"]:
                     extracted_txt = extract_text_from_image_bytes(f_bytes)
@@ -1288,14 +1794,30 @@ async def extract_fields_endpoint(
                         "filename": name,
                         "text": extracted_txt
                     })
+                    status_str = "success"
             except Exception as e:
                 print(f"[OCR WARNING] Failed to extract from {name}: {str(e)}")
+
+            extracted_files.append({
+                "filename": name,
+                "file_type": mime_type,
+                "text": extracted_txt or "No readable text could be extracted from this document.",
+                "status": status_str,
+                "metadata": {}
+            })
 
         # Add raw text input if any
         if raw_text_input:
             extracted_texts_list.append({
                 "filename": "raw_text_input",
                 "text": raw_text_input
+            })
+            extracted_files.append({
+                "filename": "raw_text_input",
+                "file_type": "text/plain",
+                "text": raw_text_input,
+                "status": "success",
+                "metadata": {}
             })
 
         # Validate we got text
@@ -1352,7 +1874,7 @@ async def extract_fields_endpoint(
 
     # Mask final profile values to ensure no Aadhaar digits are stored
     for k, v in final_merged_profile.items():
-        if isinstance(v, str):
+        if isinstance(v, str) and k != "aadhaar_number":
             final_merged_profile[k] = mask_aadhaar_number(v)
 
     save_profile_to_storage(final_merged_profile, user_id=user_id)
@@ -1392,5 +1914,6 @@ async def extract_fields_endpoint(
         "confidence_data": confidence_data,
         "processed_files_count": len(target_files_to_process),
         "document_type": document_type,
-        "document_subtype": document_subtype
+        "document_subtype": document_subtype,
+        "extracted_files": extracted_files
     }
