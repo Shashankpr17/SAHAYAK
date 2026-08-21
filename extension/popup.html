@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SAHAYAK – Form Assistant</title>
+  <link rel="stylesheet" href="popup.css">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+</head>
+<body>
+  <div class="popup-container">
+    
+    <!-- Header -->
+    <header class="header">
+      <div class="header-logo-container">
+        <span class="material-symbols-outlined logo-icon">badge</span>
+        <div>
+          <h1 class="logo-title">SAHAYAK</h1>
+          <p class="logo-subtitle">Government Form Assistant</p>
+        </div>
+      </div>
+      <div id="connection-status" class="status-badge disconnected">
+        <span class="status-dot"></span>
+        <span class="status-text">Disconnected</span>
+      </div>
+    </header>
+
+    <!-- Info Banner / Alert -->
+    <div id="alert-banner" class="alert-banner hidden"></div>
+
+    <!-- Profile Details Card -->
+    <main class="main-content">
+      <div class="section-title">
+        <span class="material-symbols-outlined section-icon">account_circle</span>
+        <h2>Verified Profile Details</h2>
+      </div>
+
+      <div class="profile-card">
+        
+        <div class="detail-item">
+          <span class="material-symbols-outlined detail-icon">person</span>
+          <div class="detail-content">
+            <span class="detail-label">Full Name</span>
+            <span id="profile-name" class="detail-val empty-val">Not Loaded</span>
+          </div>
+        </div>
+
+        <div class="detail-item">
+          <span class="material-symbols-outlined detail-icon">calendar_month</span>
+          <div class="detail-content">
+            <span class="detail-label">Date of Birth</span>
+            <span id="profile-dob" class="detail-val empty-val">Not Loaded</span>
+          </div>
+        </div>
+
+        <div class="detail-item">
+          <span class="material-symbols-outlined detail-icon">map</span>
+          <div class="detail-content">
+            <span class="detail-label">State</span>
+            <span id="profile-state" class="detail-val empty-val">Not Loaded</span>
+          </div>
+        </div>
+
+        <div class="detail-item">
+          <span class="material-symbols-outlined detail-icon">home</span>
+          <div class="detail-content">
+            <span class="detail-label">Address</span>
+            <span id="profile-address" class="detail-val empty-val">Not Loaded</span>
+          </div>
+        </div>
+
+        <div class="detail-item">
+          <span class="material-symbols-outlined detail-icon">payments</span>
+          <div class="detail-content">
+            <span class="detail-label">Annual Income</span>
+            <span id="profile-income" class="detail-val empty-val">Not Loaded</span>
+          </div>
+        </div>
+
+        <div class="detail-item">
+          <span class="material-symbols-outlined detail-icon">work</span>
+          <div class="detail-content">
+            <span class="detail-label">Occupation</span>
+            <span id="profile-occupation" class="detail-val empty-val">Not Loaded</span>
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+    <!-- Action Buttons Footer -->
+    <footer class="footer">
+      <button id="autofill-btn" class="primary-btn" disabled>
+        <span class="material-symbols-outlined btn-icon">bolt</span>
+        <span>Autofill This Form</span>
+      </button>
+      <button id="refresh-btn" class="secondary-btn">
+        <span class="material-symbols-outlined btn-icon spinner-icon">sync</span>
+        <span id="btn-text">Refresh Profile</span>
+      </button>
+    </footer>
+
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

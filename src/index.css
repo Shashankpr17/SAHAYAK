@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background-color: #F8FAFC;
+}
+
+.bloom-shadow {
+  box-shadow: 0px 4px 20px rgba(30, 64, 175, 0.05);
+}
+
+.bloom-shadow-hover:hover {
+  box-shadow: 0px 12px 32px rgba(30, 64, 175, 0.08);
+  transform: translateY(-2px);
+}
+
+.input-recessed {
+  background-color: #F1F5F9;
+}
+
+.drag-active {
+  border-color: #00288e;
+  background-color: #eff4ff;
+}
+
+.pulse-border {
+  animation: pulse-border 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse-border {
+  0%, 100% {
+    border-color: transparent;
+  }
+  50% {
+    border-color: #00288e;
+  }
+}
