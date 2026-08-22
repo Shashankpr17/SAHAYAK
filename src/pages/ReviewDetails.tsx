@@ -4,7 +4,6 @@ import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
 import type { UserProfile } from '../types';
 import { getProfile, updateProfile, saveVerifiedProfile } from '../services/api';
-import { validateName, cleanName, validateDOB, normalizeDOB, validateIndianState, validateAddress } from './ProcessingDocuments';
 import { useLanguage } from '../context/LanguageContext';
 
 interface ReviewDetailsProps {
@@ -34,8 +33,9 @@ export const ReviewDetails: React.FC<ReviewDetailsProps> = ({ profile, onProfile
   const [voterIdNumber, setVoterIdNumber] = useState('');
   const [district, setDistrict] = useState('');
   const [pinCode, setPinCode] = useState('');
+  const [city, setCity] = useState('');
   const [showAadhaar, setShowAadhaar] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [backupProfile, setBackupProfile] = useState<any>(null);
@@ -53,40 +53,18 @@ export const ReviewDetails: React.FC<ReviewDetailsProps> = ({ profile, onProfile
         
         if (res.success && res.data) {
           const d = res.data;
-          const confJson = localStorage.getItem('sahayak_confidence_data');
-          const conf = confJson ? JSON.parse(confJson) : {};
-          
-          const rawName = d.full_name || '';
-          const nameConf = conf.full_name?.confidence ?? 100;
-          const isNameValid = validateName(rawName) && (typeof nameConf !== 'number' || nameConf >= 70);
-          const validName = isNameValid ? cleanName(rawName) : '';
 
-          const rawDob = d.date_of_birth || '';
-          const dobConf = conf.date_of_birth?.confidence ?? 100;
-          const isDobValid = validateDOB(rawDob) && (typeof dobConf !== 'number' || dobConf >= 70);
-          const validDob = isDobValid ? normalizeDOB(rawDob) : '';
-
-          const rawState = d.state || '';
-          const stateConf = conf.state?.confidence ?? 100;
-          const isStateValid = validateIndianState(rawState) && (typeof stateConf !== 'number' || stateConf >= 70);
-          const validState = isStateValid ? rawState : '';
-
-          const rawAddress = d.address || '';
-          const addrConf = conf.address?.confidence ?? 100;
-          const isAddrValid = validateAddress(rawAddress) && (typeof addrConf !== 'number' || addrConf >= 70);
-          const validAddress = isAddrValid ? rawAddress : '';
-
-          console.log("FINAL UI DATA:", {
-            fullName: validName,
-            dob: validDob,
-            state: validState,
-            address: validAddress
+          console.log("FINAL UI DATA FROM BACKEND:", {
+            fullName: d.full_name,
+            dob: d.date_of_birth,
+            state: d.state,
+            address: d.address
           });
 
-          setFullName(validName);
-          setDob(validDob);
-          setState(validState);
-          setAddress(validAddress);
+          setFullName(d.full_name || '');
+          setDob(d.date_of_birth || '');
+          setState(d.state || '');
+          setAddress(d.address || '');
           setAnnualIncome(d.annual_income || '');
           setOccupation(d.occupation || '');
           setGender(d.gender || '');
@@ -94,10 +72,12 @@ export const ReviewDetails: React.FC<ReviewDetailsProps> = ({ profile, onProfile
           setMotherName(d.mother_name || '');
           setBloodGroup(d.blood_group || '');
           setAadhaarNumber(d.aadhaar_number || '');
+          console.log(`[DEBUG LOG] frontend received Aadhaar exists (loadProfile): ${!!d.aadhaar_number}`);
           setPanNumber(d.pan_number || '');
           setDrivingLicenceNumber(d.driving_licence_number || '');
           setVoterIdNumber(d.voter_id_number || '');
           setDistrict(d.district || '');
+          setCity(d.city || '');
           setPinCode(d.pin_code || '');
           return;
         }
@@ -106,40 +86,17 @@ export const ReviewDetails: React.FC<ReviewDetailsProps> = ({ profile, onProfile
       }
 
       if (profile) {
-        const confJson = localStorage.getItem('sahayak_confidence_data');
-        const conf = confJson ? JSON.parse(confJson) : {};
-
-        const rawName = profile.fullName || '';
-        const nameConf = conf.full_name?.confidence ?? 100;
-        const isNameValid = validateName(rawName) && (typeof nameConf !== 'number' || nameConf >= 70);
-        const validName = isNameValid ? cleanName(rawName) : '';
-
-        const rawDob = profile.dob || '';
-        const dobConf = conf.date_of_birth?.confidence ?? 100;
-        const isDobValid = validateDOB(rawDob) && (typeof dobConf !== 'number' || dobConf >= 70);
-        const validDob = isDobValid ? normalizeDOB(rawDob) : '';
-
-        const rawState = profile.state || '';
-        const stateConf = conf.state?.confidence ?? 100;
-        const isStateValid = validateIndianState(rawState) && (typeof stateConf !== 'number' || stateConf >= 70);
-        const validState = isStateValid ? rawState : '';
-
-        const rawAddress = profile.address || '';
-        const addrConf = conf.address?.confidence ?? 100;
-        const isAddrValid = validateAddress(rawAddress) && (typeof addrConf !== 'number' || addrConf >= 70);
-        const validAddress = isAddrValid ? rawAddress : '';
-
-        console.log("FINAL UI DATA:", {
-          fullName: validName,
-          dob: validDob,
-          state: validState,
-          address: validAddress
+        console.log("FINAL UI DATA FROM CLIENT PROFILE PROP:", {
+          fullName: profile.fullName,
+          dob: profile.dob,
+          state: profile.state,
+          address: profile.address
         });
 
-        setFullName(validName);
-        setDob(validDob);
-        setState(validState);
-        setAddress(validAddress);
+        setFullName(profile.fullName || '');
+        setDob(profile.dob || '');
+        setState(profile.state || '');
+        setAddress(profile.address || '');
         setAnnualIncome(profile.annualIncome || '');
         setOccupation(profile.occupation || '');
         setGender(profile.gender || '');
@@ -147,10 +104,12 @@ export const ReviewDetails: React.FC<ReviewDetailsProps> = ({ profile, onProfile
         setMotherName(profile.motherName || '');
         setBloodGroup(profile.bloodGroup || '');
         setAadhaarNumber(profile.aadhaarNumber || '');
+        console.log(`[DEBUG LOG] frontend received Aadhaar exists (profile fallback): ${!!profile.aadhaarNumber}`);
         setPanNumber(profile.panNumber || '');
         setDrivingLicenceNumber(profile.drivingLicenceNumber || '');
         setVoterIdNumber(profile.voterIdNumber || '');
         setDistrict(profile.district || '');
+        setCity(profile.city || '');
         setPinCode(profile.pinCode || '');
       }
     };
@@ -246,7 +205,8 @@ export const ReviewDetails: React.FC<ReviewDetailsProps> = ({ profile, onProfile
       drivingLicenceNumber,
       voterIdNumber,
       district,
-      pinCode
+      pinCode,
+      city
     };
 
     try {
@@ -266,7 +226,8 @@ export const ReviewDetails: React.FC<ReviewDetailsProps> = ({ profile, onProfile
         driving_licence_number: drivingLicenceNumber,
         voter_id_number: voterIdNumber,
         district: district,
-        pin_code: pinCode
+        pin_code: pinCode,
+        city: city
       });
     } catch (err) {
       console.warn('[DATA FLOW] updateProfile failed:', err);
@@ -292,6 +253,7 @@ export const ReviewDetails: React.FC<ReviewDetailsProps> = ({ profile, onProfile
       setDrivingLicenceNumber(backupProfile.drivingLicenceNumber || '');
       setVoterIdNumber(backupProfile.voterIdNumber || '');
       setDistrict(backupProfile.district || '');
+      setCity(backupProfile.city || '');
       setPinCode(backupProfile.pinCode || '');
     }
     setValidationErrors({});
@@ -318,23 +280,47 @@ export const ReviewDetails: React.FC<ReviewDetailsProps> = ({ profile, onProfile
     try {
       console.log(`[DATA FLOW] Confirming profile details and saving to verified profile schema`);
       const payload = {
-        full_name: fullName,
-        date_of_birth: dob,
-        state: state,
-        address: address,
-        annual_income: annualIncome,
-        occupation: occupation,
-        gender: gender,
-        father_name: fatherName,
-        mother_name: motherName,
-        blood_group: bloodGroup,
-        aadhaar_number: aadhaarNumber,
-        pan_number: panNumber,
-        driving_licence_number: drivingLicenceNumber,
-        voter_id_number: voterIdNumber,
-        district: district,
-        pin_code: pinCode
+        full_name: fullName.trim(),
+        date_of_birth: dob.trim(),
+        state: state.trim(),
+        address: address.trim(),
+        annual_income: annualIncome.trim(),
+        occupation: occupation.trim(),
+        gender: gender || '',
+        father_name: fatherName || '',
+        mother_name: motherName || '',
+        blood_group: bloodGroup || '',
+        aadhaar_number: aadhaarNumber || '',
+        pan_number: panNumber || '',
+        driving_licence_number: drivingLicenceNumber || '',
+        voter_id_number: voterIdNumber || '',
+        district: district || '',
+        pin_code: pinCode || '',
+        city: city || ''
       };
+
+      const updated = {
+        fullName: payload.full_name,
+        dob: payload.date_of_birth,
+        state: payload.state,
+        address: payload.address,
+        annualIncome: payload.annual_income,
+        occupation: payload.occupation,
+        gender: payload.gender,
+        fatherName: payload.father_name,
+        motherName: payload.mother_name,
+        bloodGroup: payload.blood_group,
+        aadhaarNumber: payload.aadhaar_number,
+        panNumber: payload.pan_number,
+        drivingLicenceNumber: payload.driving_licence_number,
+        voterIdNumber: payload.voter_id_number,
+        district: payload.district,
+        pinCode: payload.pin_code,
+        city: payload.city
+      };
+
+      localStorage.setItem('sahayak_user_profile', JSON.stringify(updated));
+      onProfileUpdated(updated);
 
       const res = await saveVerifiedProfile(payload);
       console.log(`[DATA FLOW] saveVerifiedProfile response:`, res);
@@ -358,9 +344,14 @@ export const ReviewDetails: React.FC<ReviewDetailsProps> = ({ profile, onProfile
 
   const getMaskedVal = (val: string, show: boolean, placeholder: string = 'Not available') => {
     if (!val) return language === 'en' ? placeholder : language === 'hi' ? 'उपलब्ध नहीं' : 'ଉପଲବ୍ଧ ନାହିଁ';
-    if (show) return val;
-    // Mask sensitive digits
     const digits = val.replace(/\D/g, '');
+    if (show) {
+      if (digits.length === 12) {
+        return `${digits.slice(0, 4)} ${digits.slice(4, 8)} ${digits.slice(8)}`;
+      }
+      return val;
+    }
+    // Mask sensitive digits
     if (digits.length <= 4) return val;
     const visible = digits.slice(-4);
     const masked = 'X'.repeat(digits.length - 4);
@@ -785,6 +776,26 @@ export const ReviewDetails: React.FC<ReviewDetailsProps> = ({ profile, onProfile
                         type="text"
                         value={isEditing ? district : (district || (language === 'en' ? 'Not available' : language === 'hi' ? 'उपलब्ध नहीं' : 'ଉପଲବ୍ଧ ନାହିଁ'))}
                         onChange={(e) => setDistrict(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  {/* City */}
+                  <div className="col-span-1">
+                    <label className="block font-label-md text-label-md text-on-surface mb-unit font-semibold" htmlFor="city">
+                      {t("city")}
+                    </label>
+                    <div className="relative">
+                      <span className="material-symbols-outlined absolute left-4 top-3 text-outline">location_city</span>
+                      <input
+                        disabled={!isEditing}
+                        className={`w-full border rounded-lg pl-12 pr-4 py-3 font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all ${
+                          isEditing ? 'bg-white border-outline' : 'input-recessed border-transparent cursor-not-allowed'
+                        }`}
+                        id="city"
+                        type="text"
+                        value={isEditing ? city : (city || (language === 'en' ? 'Not available' : language === 'hi' ? 'उपलब्ध नहीं' : 'ଉପଲବ୍ଧ ନାହିଁ'))}
+                        onChange={(e) => setCity(e.target.value)}
                       />
                     </div>
                   </div>
