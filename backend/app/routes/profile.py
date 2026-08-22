@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
 from app.models.profile import Profile
 from app.services import profile_service
+from app.services.auth import get_current_user_sub
 
 router = APIRouter(prefix="/api/profile", tags=["profile"])
 
@@ -16,12 +17,15 @@ router = APIRouter(prefix="/api/profile", tags=["profile"])
     status_code=status.HTTP_200_OK,
     include_in_schema=False
 )
-def save_profile_endpoint(profile: Profile):
+def save_profile_endpoint(
+    profile: Profile,
+    google_sub: str = Depends(get_current_user_sub)
+):
     """
-    Save or update the validated SAHAYAK user profile.
-    Accepts full or partial profile data matching the canonical Profile schema.
+    Save or update the validated SAHAYAK user profile in Firestore.
+    Requires authentication via session token.
     """
-    saved_profile = profile_service.save_profile(profile)
+    saved_profile = profile_service.save_profile(google_sub, profile)
     return {
         "success": True,
         "message": "Profile saved successfully",
@@ -40,12 +44,14 @@ def save_profile_endpoint(profile: Profile):
     status_code=status.HTTP_200_OK,
     include_in_schema=False
 )
-def get_profile_endpoint():
+def get_profile_endpoint(
+    google_sub: str = Depends(get_current_user_sub)
+):
     """
-    Retrieve the currently stored SAHAYAK user profile.
+    Retrieve the currently stored SAHAYAK user profile from Firestore.
     Returns 404 if no profile has been saved yet.
     """
-    current_profile = profile_service.get_profile()
+    current_profile = profile_service.get_profile(google_sub)
     if current_profile is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
