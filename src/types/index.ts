@@ -16,6 +16,7 @@ export interface UserProfile {
   drivingLicenceNumber?: string;
   voterIdNumber?: string;
   district?: string;
+  city?: string;
   pinCode?: string;
 }
 

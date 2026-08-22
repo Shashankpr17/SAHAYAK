@@ -278,10 +278,12 @@ export const ProcessingDocuments: React.FC<ProcessingDocumentsProps> = ({
             drivingLicenceNumber: result.extracted_data.driving_licence_number || undefined,
             voterIdNumber: result.extracted_data.voter_id_number || undefined,
             district: result.extracted_data.district || undefined,
+            city: result.extracted_data.city || undefined,
             pinCode: result.extracted_data.pin_code || undefined
           };
 
           console.log('[VALIDATION_COMPLETED] Mapping user profile:', mappedProfile);
+          console.log(`[DEBUG LOG] frontend received Aadhaar exists: ${!!mappedProfile.aadhaarNumber}`);
           console.log('[PROFILE_PREPARATION_STARTED] Preparing profile for ReviewDetails page...');
           onProcessingComplete(mappedProfile);
           console.log('[PROFILE_PREPARATION_COMPLETED] Profile prepared successfully.');

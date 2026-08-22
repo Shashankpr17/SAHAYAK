@@ -52,6 +52,7 @@ export const Header: React.FC<HeaderProps> = ({ minimal = false }) => {
     localStorage.removeItem('sahayak_user_profile');
     localStorage.removeItem('sahayak_doc_type');
     localStorage.removeItem('sahayak_selected_scheme');
+    localStorage.removeItem('sahayak_guest_id');
     window.location.href = '/';
   };
 

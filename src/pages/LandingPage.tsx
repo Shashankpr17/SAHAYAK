@@ -53,6 +53,33 @@ export const LandingPage: React.FC = () => {
     };
   }, [isAuthenticated]);
 
+  const handleGuestLogin = () => {
+    setIsLoggingIn(true);
+    try {
+      let guestId = localStorage.getItem('sahayak_guest_id');
+      if (!guestId) {
+        guestId = 'guest_' + Math.random().toString(36).substring(2, 15) + '_' + Date.now();
+        localStorage.setItem('sahayak_guest_id', guestId);
+      }
+      
+      localStorage.setItem('sahayak_token', guestId);
+      localStorage.setItem('sahayak_user', JSON.stringify({
+        id: guestId,
+        email: 'guest@sahayak.local',
+        name: 'Guest User',
+        is_guest: true
+      }));
+      
+      setIsAuthenticated(true);
+      console.log(`[AUTH] Successfully signed in Guest: ${guestId}`);
+      checkProfileAndNavigate(guestId);
+    } catch (err) {
+      console.error('Guest Sign-In failed:', err);
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
   const checkProfileAndNavigate = async (token: string) => {
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8001';
@@ -152,6 +179,7 @@ export const LandingPage: React.FC = () => {
                       localStorage.removeItem('sahayak_user_profile');
                       localStorage.removeItem('sahayak_doc_type');
                       localStorage.removeItem('sahayak_selected_scheme');
+                      localStorage.removeItem('sahayak_guest_id');
                       setIsAuthenticated(false);
                     }}
                     className="font-label-md text-label-md bg-transparent border border-outline-variant text-on-surface px-6 py-3 rounded-lg hover:bg-surface-container-low transition-colors"
@@ -160,7 +188,17 @@ export const LandingPage: React.FC = () => {
                   </button>
                 </>
               ) : (
-                <div id="google-login-btn-container" className="py-2"></div>
+                <div className="flex flex-wrap items-center gap-4 py-2">
+                  <div id="google-login-btn-container"></div>
+                  <button
+                    type="button"
+                    onClick={handleGuestLogin}
+                    className="font-label-md text-label-md bg-secondary text-on-secondary px-6 py-3 rounded-lg hover:shadow-floating transition-all font-bold flex items-center gap-2 border border-transparent hover:bg-secondary/90"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">person_outline</span>
+                    Continue as Guest
+                  </button>
+                </div>
               )}
               <button
                 onClick={() => handleScrollTo('how-it-works')}

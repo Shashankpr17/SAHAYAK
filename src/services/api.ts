@@ -32,6 +32,7 @@ export interface ExtractedFieldsResponse {
     driving_licence_number?: string | null;
     voter_id_number?: string | null;
     district?: string | null;
+    city?: string | null;
     pin_code?: string | null;
   };
   confidence_data?: any;
@@ -56,6 +57,7 @@ export interface ProfileResponse {
     driving_licence_number?: string | null;
     voter_id_number?: string | null;
     district?: string | null;
+    city?: string | null;
     pin_code?: string | null;
   };
 }
@@ -179,9 +181,6 @@ export async function extractFields(
     fileOrFiles.forEach((f) => {
       formData.append('files', f);
     });
-    if (fileOrFiles.length > 0) {
-      formData.append('file', fileOrFiles[0]);
-    }
   } else {
     formData.append('file', fileOrFiles);
   }
@@ -242,6 +241,7 @@ export async function updateProfile(data: {
   driving_licence_number?: string;
   voter_id_number?: string;
   district?: string;
+  city?: string;
   pin_code?: string;
 }) {
   const res = await fetch(`${API_BASE_URL}/api/profile`, {
@@ -347,7 +347,7 @@ export async function explainScheme(
 }
 
 /**
- * Save verified profile via POST /profile
+ * Save verified profile via POST /api/profile
  */
 export async function saveVerifiedProfile(data: {
   full_name: string;
@@ -365,9 +365,10 @@ export async function saveVerifiedProfile(data: {
   driving_licence_number?: string;
   voter_id_number?: string;
   district?: string;
+  city?: string;
   pin_code?: string;
 }) {
-  const res = await fetch(`${API_BASE_URL}/profile`, {
+  const res = await fetch(`${API_BASE_URL}/api/profile`, {
     method: 'POST',
     headers: getHeaders({
       'Content-Type': 'application/json',
@@ -384,10 +385,10 @@ export async function saveVerifiedProfile(data: {
 }
 
 /**
- * Retrieve verified profile from GET /profile
+ * Retrieve verified profile from GET /api/profile
  */
 export async function getVerifiedProfile() {
-  const res = await fetch(`${API_BASE_URL}/profile`, {
+  const res = await fetch(`${API_BASE_URL}/api/profile`, {
     headers: getHeaders(),
   });
 
