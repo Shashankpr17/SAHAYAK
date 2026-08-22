@@ -10,6 +10,7 @@ if str(backend_root) not in sys.path:
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routes.profile import router as profile_router
+from app.routes.documents import router as documents_router
 
 app = FastAPI(
     title="SAHAYAK Backend API",
@@ -28,8 +29,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include Profile Router
+# Include Routers
 app.include_router(profile_router)
+app.include_router(documents_router)
 
 
 @app.get("/")
