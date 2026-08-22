@@ -1,5 +1,5 @@
 // Centralized API configuration for SAHAYAK Backend
-export const API_BASE_URL = 'http://127.0.0.1:8001';
+export const API_BASE_URL = 'https://sahayak-seven-rho.vercel.app';
 
 /**
  * Construct authorization and extra headers dynamically from localStorage session tokens
