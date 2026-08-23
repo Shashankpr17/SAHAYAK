@@ -53,14 +53,20 @@ export const SchemeDetails: React.FC<SchemeDetailsProps> = ({ selectedScheme }) 
 
   const localFallback = SCHEMES.find(s => s.id.toLowerCase() === activeId.toLowerCase()) || SCHEMES[0];
 
-  const schemeName = explanationData?.scheme_name || localFallback.name;
+  const schemeName = formalData?.name || explanationData?.scheme_name || localFallback.name;
   const category = formalData?.category || localFallback.category;
-  const officialLink = explanationData?.official_link || formalData?.official_link || localFallback.whoCanGet?.en?.[0] || 'https://india.gov.in';
+  
+  // Safe official portal link resolution
+  let resolvedOfficialLink = formalData?.official_link || explanationData?.official_link || localFallback.official_link || 'https://india.gov.in';
+  if (!resolvedOfficialLink || !resolvedOfficialLink.startsWith('http')) {
+    resolvedOfficialLink = localFallback.official_link || 'https://india.gov.in';
+  }
+  const officialLink = resolvedOfficialLink;
 
-  const criteriaText = formalData?.eligibility_criteria || localFallback.description.en;
+  const criteriaText = formalData?.eligibility_criteria || (typeof localFallback.description === 'object' ? (localFallback.description as any)[language] || localFallback.description.en : localFallback.description);
   const parameters = formalData?.parameters_evaluated || ['Age', 'Income', 'State', 'Occupation'];
-  const requiredDocs = formalData?.required_documents || ['Aadhaar Card', 'Identity Proof', 'Income Proof'];
-  const applicationInfo = formalData?.application_information || 'Apply online on the official government portal.';
+  const requiredDocs = formalData?.required_documents || (localFallback.requiredDocs ? localFallback.requiredDocs.map(d => d.name) : ['Aadhaar Card', 'Identity Proof', 'Income Proof']);
+  const applicationInfo = formalData?.application_information || (typeof localFallback.howToGet === 'object' ? (localFallback.howToGet as any)[language] || localFallback.howToGet.en : 'Apply online on the official government portal.');
 
   // Heading labels depending on language
   const labels = {
@@ -142,7 +148,11 @@ export const SchemeDetails: React.FC<SchemeDetailsProps> = ({ selectedScheme }) 
   };
 
   const handleOfficialPortalClick = () => {
-    window.open(officialLink, '_blank', 'noopener,noreferrer');
+    let targetUrl = officialLink;
+    if (!targetUrl || !targetUrl.startsWith('http')) {
+      targetUrl = localFallback.official_link || 'https://india.gov.in';
+    }
+    window.open(targetUrl, '_blank', 'noopener,noreferrer');
   };
 
   return (

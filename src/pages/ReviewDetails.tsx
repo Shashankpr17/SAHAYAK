@@ -177,9 +177,6 @@ export const ReviewDetails: React.FC<ReviewDetailsProps> = ({ profile, onProfile
   const handleSaveChanges = async () => {
     const newErrors: { [key: string]: string } = {};
     if (!fullName.trim()) newErrors.fullName = language === 'en' ? 'Full Name is required.' : language === 'hi' ? 'पूरा नाम आवश्यक है।' : 'ସମ୍ପୂର୍ଣ୍ଣ ନାମ ଆବଶ୍ୟକ |';
-    if (!dob.trim()) newErrors.dob = language === 'en' ? 'Date of Birth is required.' : language === 'hi' ? 'जन्म तिथि आवश्यक है।' : 'ଜନ୍ମ ତାରିଖ ଆବଶ୍ୟକ |';
-    if (!state.trim()) newErrors.state = language === 'en' ? 'State is required.' : language === 'hi' ? 'राज्य आवश्यक है।' : 'ରାଜ୍ୟ ଆବଶ୍ୟକ |';
-    if (!address.trim()) newErrors.address = language === 'en' ? 'Address is required.' : language === 'hi' ? 'पता आवश्यक है।' : 'ଠିକଣା ଆବଶ୍ୟକ |';
 
     if (Object.keys(newErrors).length > 0) {
       setValidationErrors(newErrors);
@@ -266,9 +263,6 @@ export const ReviewDetails: React.FC<ReviewDetailsProps> = ({ profile, onProfile
     
     const newErrors: { [key: string]: string } = {};
     if (!fullName.trim()) newErrors.fullName = language === 'en' ? 'Full Name is required.' : language === 'hi' ? 'पूरा नाम आवश्यक है।' : 'ସମ୍ପୂର୍ଣ୍ଣ ନାମ ଆବଶ୍ୟକ |';
-    if (!dob.trim()) newErrors.dob = language === 'en' ? 'Date of Birth is required.' : language === 'hi' ? 'जन्म तिथि आवश्यक है।' : 'ଜନ୍ମ ତାରିଖ ଆବଶ୍ୟକ |';
-    if (!state.trim()) newErrors.state = language === 'en' ? 'State is required.' : language === 'hi' ? 'राज्य आवश्यक है।' : 'ରାଜ୍ୟ ଆବଶ୍ୟକ |';
-    if (!address.trim()) newErrors.address = language === 'en' ? 'Address is required.' : language === 'hi' ? 'पता आवश्यक है।' : 'ଠିକଣା ଆବଶ୍ୟକ |';
 
     if (Object.keys(newErrors).length > 0) {
       setValidationErrors(newErrors);

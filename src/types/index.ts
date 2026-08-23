@@ -39,6 +39,7 @@ export interface Scheme {
   name: string;
   category: string;
   state: string;
+  official_link?: string;
   description: SchemeTranslation;
   benefits: SchemeTranslation;
   eligibilityCriteria: SchemeListTranslation;

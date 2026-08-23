@@ -14,6 +14,7 @@ from app.routes.documents import router as documents_router
 from app.routes.auth import router as auth_router
 from app.routes.schemes import router as schemes_router
 from app.routes.eligibility import router as eligibility_router
+from app.routes.explain import router as explain_router
 
 app = FastAPI(
     title="SAHAYAK Backend API",
@@ -44,6 +45,7 @@ app.include_router(documents_router)
 app.include_router(auth_router)
 app.include_router(schemes_router)
 app.include_router(eligibility_router)
+app.include_router(explain_router)
 
 
 @app.get("/")
