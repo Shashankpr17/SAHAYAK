@@ -1,8 +1,10 @@
+import io
 from pathlib import Path
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 from fastapi import APIRouter, Request, File, UploadFile, Form, HTTPException, status
 from app.services import storage_service, ocr_service
+from app.services import groq_service
 
 router = APIRouter(prefix="/api/documents", tags=["documents"])
 
@@ -240,4 +242,141 @@ async def extract_text_direct_endpoint(
         "filename": file.filename,
         "raw_text": extraction["raw_text"],
         "method": extraction["method"]
+    }
+
+
+# ---------------------------------------------------------------------------
+# Groq Vision OCR + Structured Extraction — single endpoint for frontend
+# ---------------------------------------------------------------------------
+
+@router.post(
+    "/extract-fields",
+    status_code=status.HTTP_200_OK,
+    summary="OCR documents and extract structured profile fields via Groq",
+    response_description="Raw OCR text and extracted canonical profile fields"
+)
+async def extract_fields_endpoint(
+    files: Optional[List[UploadFile]] = File(None),
+    file: Optional[UploadFile] = File(None),
+    document_type: Optional[str] = Form(None),
+    document_subtype: Optional[str] = Form(None)
+):
+    """
+    Full pipeline: image/PDF → Groq Vision OCR → Groq structured extraction.
+    Accepts one or more files via multipart/form-data.
+    Returns raw OCR text and canonical profile JSON.
+    Preserves existing extracted_files contract expected by the frontend.
+    """
+    # Collect all uploaded files
+    all_files: List[UploadFile] = []
+    if files:
+        all_files.extend(files)
+    if file:
+        # Avoid duplicates when both 'file' and 'files' are sent
+        existing_names = {f.filename for f in all_files}
+        if file.filename not in existing_names:
+            all_files.append(file)
+
+    if not all_files:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No files provided for extraction."
+        )
+
+    raw_texts: List[str] = []
+    extracted_files: List[Dict[str, Any]] = []
+
+    for f in all_files:
+        if not f.filename:
+            continue
+        content = await f.read()
+        filename = f.filename
+        mime = f.content_type or ""
+        ext = Path(filename).suffix.lower()
+
+        try:
+            raw_text = ""
+
+            # --- PDF: try digital text first, fall back to Vision on empty pages ---
+            if ext == ".pdf" or "pdf" in mime.lower():
+                import pypdf
+                pdf_reader = pypdf.PdfReader(io.BytesIO(content))
+                page_texts: List[str] = []
+                for page_idx, page in enumerate(pdf_reader.pages):
+                    page_text = (page.extract_text() or "").strip()
+                    if len(page_text) > 10:
+                        page_texts.append(page_text)
+                    else:
+                        # Scanned page — use embedded images with Groq Vision
+                        try:
+                            for img_obj in page.images:
+                                img_text = groq_service.extract_raw_text_from_image_bytes(
+                                    image_bytes=img_obj.data,
+                                    filename=f"{filename}_page{page_idx+1}"
+                                )
+                                if img_text:
+                                    page_texts.append(img_text)
+                        except Exception as pe:
+                            print(f"[EXTRACT_FIELDS] PDF page {page_idx+1} Vision failed: {pe}")
+                raw_text = "\n\n--- Page Break ---\n\n".join(page_texts).strip()
+
+            # --- Image: Groq Vision ---
+            elif ext in {".jpg", ".jpeg", ".png"} or "image" in mime.lower():
+                raw_text = groq_service.extract_raw_text_from_image_bytes(
+                    image_bytes=content,
+                    mime_type=mime if mime else "image/jpeg",
+                    filename=filename
+                )
+
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Unsupported file format '{ext}'. Allowed: JPG, PNG, PDF."
+                )
+
+            raw_texts.append(raw_text)
+            extracted_files.append({
+                "filename": filename,
+                "file_type": mime,
+                "text": raw_text,
+                "status": "success",
+                "metadata": {"size": len(content)}
+            })
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            print(f"[EXTRACT_FIELDS] Failed to process '{filename}': {e}")
+            extracted_files.append({
+                "filename": filename,
+                "file_type": mime,
+                "text": "",
+                "status": "error",
+                "metadata": {"error": str(e)}
+            })
+        finally:
+            await f.close()
+
+    # Filter only successful texts for structured extraction
+    successful_texts = [ef["text"] for ef in extracted_files if ef["status"] == "success" and ef["text"]]
+
+    if not successful_texts:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="OCR produced no text from the provided files. Ensure files are clear images or PDFs."
+        )
+
+    # Stage 2: structured extraction across all documents
+    extracted_data = groq_service.extract_structured_fields_groq(
+        raw_texts=successful_texts,
+        document_type=document_type
+    )
+
+    aggregated_text = "\n\n=== Next Document ===\n\n".join(successful_texts)
+
+    return {
+        "success": True,
+        "raw_text": aggregated_text,
+        "extracted_data": extracted_data,
+        "extracted_files": extracted_files
     }
