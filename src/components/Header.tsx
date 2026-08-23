@@ -66,7 +66,7 @@ export const Header: React.FC<HeaderProps> = ({ minimal = false }) => {
           <img 
             alt="National Emblem" 
             className="h-8 w-auto inline-block mr-2"
-            src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Emblem_of_India.svg/160px-Emblem_of_India.svg.png"
+            src="/national-emblem.svg"
           />
           {t("logo")}
         </Link>
