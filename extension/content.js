@@ -1,5 +1,30 @@
 console.log("SAHAYAK: Content script loaded");
 
+// Auto-sync SAHAYAK profile & token when user is on SAHAYAK web app
+try {
+  const host = window.location.hostname.toLowerCase();
+  if (host.includes('sahayak') || host.includes('localhost') || host.includes('127.0.0.1')) {
+    const syncFromWeb = () => {
+      try {
+        const token = localStorage.getItem('sahayak_token');
+        const profileStr = localStorage.getItem('sahayak_user_profile');
+        if (token) {
+          chrome.storage.local.set({ sahayak_token: token });
+        }
+        if (profileStr) {
+          try {
+            const profile = JSON.parse(profileStr);
+            chrome.storage.local.set({ verifiedProfile: profile, lastConnected: true });
+            console.log('[SAHAYAK Extension] Synced verified profile from web app to extension');
+          } catch (pe) {}
+        }
+      } catch (e) {}
+    };
+    syncFromWeb();
+    window.addEventListener('storage', syncFromWeb);
+  }
+} catch (e) {}
+
 // Mappings of target keys and their variation keywords
 const CONFIDENCE_KEYWORDS = {
   first_name: {
@@ -53,6 +78,54 @@ const CONFIDENCE_KEYWORDS = {
   gender: {
     kws: ['gender', 'sex', 'gender type', 'gender selection'],
     weight: 10
+  },
+  father_name: {
+    kws: ['father', 'husband', 'father name', 'fathername', 'parent name', 'father\'s name', 'पिता', 'husband name'],
+    weight: 10
+  },
+  mother_name: {
+    kws: ['mother', 'mother name', 'mothername', 'mother\'s name', 'माता'],
+    weight: 10
+  },
+  blood_group: {
+    kws: ['blood group', 'bloodgroup', 'blood', 'bg'],
+    weight: 10
+  },
+  aadhaar_number: {
+    kws: ['aadhaar', 'aadhar', 'aadhaar number', 'aadhar number', 'aadhaar_number', 'aadhar_number', 'uid', 'unique id'],
+    weight: 12
+  },
+  pan_number: {
+    kws: ['pan', 'pan number', 'pannumber', 'pan_number', 'permanent account number'],
+    weight: 12
+  },
+  driving_licence_number: {
+    kws: ['dl', 'driving licence', 'driving license', 'driving licence number', 'driving license number', 'licence number', 'license number'],
+    weight: 12
+  },
+  voter_id_number: {
+    kws: ['voter', 'voter id', 'voter id number', 'epic', 'epic number', 'voter_id_number'],
+    weight: 12
+  },
+  district: {
+    kws: ['district', 'dist', 'distt', 'जिला'],
+    weight: 10
+  },
+  city: {
+    kws: ['city', 'town', 'locality', 'village', 'शहर', 'गाव'],
+    weight: 10
+  },
+  pin_code: {
+    kws: ['pin', 'pincode', 'pin code', 'postal code', 'zip', 'zipcode'],
+    weight: 10
+  },
+  address_line1: {
+    kws: ['address line 1', 'address1', 'addr1', 'street', 'locality', 'house no', 'flat no'],
+    weight: 8
+  },
+  address_line2: {
+    kws: ['address line 2', 'address2', 'addr2', 'landmark', 'area', 'sub-locality'],
+    weight: 8
   }
 };
 
@@ -450,6 +523,20 @@ async function runAutofill(profile) {
       }
     });
 
+    // Helper to split full address into line1 and line2
+    function splitAddress(address) {
+      if (!address) return { line1: "", line2: "" };
+      const parts = address.split(',');
+      if (parts.length <= 1) {
+        return { line1: address, line2: "" };
+      }
+      const mid = Math.ceil(parts.length / 2);
+      const line1 = parts.slice(0, mid).join(',').trim();
+      const line2 = parts.slice(mid).join(',').trim();
+      return { line1, line2 };
+    }
+
+    const addressData = splitAddress(profile.address || profile.raw_address_text);
     const nameData = parseName(profile.full_name || profile.fullName);
     const dobData = parseDOB(profile.date_of_birth || profile.dateOfBirth);
     const dobValues = getDOBPossibleValues(profile.date_of_birth || profile.dateOfBirth);
@@ -466,9 +553,21 @@ async function runAutofill(profile) {
       year: [],
       state: [],
       address: [],
+      address_line1: [],
+      address_line2: [],
       annual_income: [],
       occupation: [],
-      gender: []
+      gender: [],
+      father_name: [],
+      mother_name: [],
+      blood_group: [],
+      aadhaar_number: [],
+      pan_number: [],
+      driving_licence_number: [],
+      voter_id_number: [],
+      district: [],
+      city: [],
+      pin_code: []
     };
     
     for (const el of candidates) {
@@ -514,10 +613,22 @@ async function runAutofill(profile) {
       year: dobValues ? dobValues.year : [dobData.year],
       date_of_birth: [profile.date_of_birth || profile.dateOfBirth],
       state: [profile.state],
-      address: [profile.address],
+      address: [profile.address || profile.raw_address_text],
+      address_line1: [addressData.line1],
+      address_line2: [addressData.line2],
       annual_income: [profile.annual_income || profile.annualIncome],
       occupation: [profile.occupation],
-      gender: [profile.gender || profile.sex]
+      gender: [profile.gender || profile.sex],
+      father_name: [profile.father_name || profile.fatherName || profile.father_or_husband_name],
+      mother_name: [profile.mother_name || profile.motherName],
+      blood_group: [profile.blood_group || profile.bloodGroup],
+      aadhaar_number: [profile.aadhaar_number || profile.aadhaar || profile.aadhaarNumber],
+      pan_number: [profile.pan_number || profile.pan || profile.panNumber],
+      driving_licence_number: [profile.driving_licence_number || profile.driving_licence || profile.driving_license_number || profile.drivingLicenceNumber || profile.drivingLicenseNumber],
+      voter_id_number: [profile.voter_id_number || profile.voter_id || profile.voterIdNumber],
+      district: [profile.district],
+      city: [profile.city],
+      pin_code: [profile.pin_code || profile.pinCode || profile.pincode]
     };
 
     let filledCount = 0;
@@ -545,7 +656,8 @@ async function runAutofill(profile) {
           continue; // skip duplicate elements
         }
         
-        console.log(`[SAHAYAK] Filling value: ${vals[0]}`);
+        // Safe development logging (presence only, no value printed for safety)
+        console.log(`[SAHAYAK] Filling field: ${fieldName}`);
         let success = false;
         
         if (['day', 'month', 'year', 'gender'].includes(fieldName)) {

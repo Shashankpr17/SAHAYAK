@@ -29,64 +29,168 @@
     <!-- Info Banner / Alert -->
     <div id="alert-banner" class="alert-banner hidden"></div>
 
-    <!-- Profile Details Card -->
+    <!-- Profile Details Sections -->
     <main class="main-content">
-      <div class="section-title">
-        <span class="material-symbols-outlined section-icon">account_circle</span>
-        <h2>Verified Profile Details</h2>
+      
+      <!-- Section 1: Personal Info -->
+      <div class="section-container">
+        <div class="section-title">
+          <span class="material-symbols-outlined section-icon font-semibold">person</span>
+          <h2>Personal Information</h2>
+        </div>
+        <div class="profile-card">
+          <div class="detail-item" id="item-name">
+            <span class="material-symbols-outlined detail-icon">badge</span>
+            <div class="detail-content">
+              <span class="detail-label">Full Name</span>
+              <span id="profile-name" class="detail-val empty-val">Not Loaded</span>
+            </div>
+          </div>
+          <div class="detail-item" id="item-dob">
+            <span class="material-symbols-outlined detail-icon">calendar_month</span>
+            <div class="detail-content">
+              <span class="detail-label">Date of Birth</span>
+              <span id="profile-dob" class="detail-val empty-val">Not Loaded</span>
+            </div>
+          </div>
+          <div class="detail-item" id="item-gender">
+            <span class="material-symbols-outlined detail-icon">wc</span>
+            <div class="detail-content">
+              <span class="detail-label">Gender</span>
+              <span id="profile-gender" class="detail-val empty-val">Not Loaded</span>
+            </div>
+          </div>
+          <div class="detail-item" id="item-father">
+            <span class="material-symbols-outlined detail-icon">person_apron</span>
+            <div class="detail-content">
+              <span class="detail-label">Father's Name</span>
+              <span id="profile-father" class="detail-val empty-val">Not Loaded</span>
+            </div>
+          </div>
+          <div class="detail-item" id="item-mother">
+            <span class="material-symbols-outlined detail-icon">pregnancy</span>
+            <div class="detail-content">
+              <span class="detail-label">Mother's Name</span>
+              <span id="profile-mother" class="detail-val empty-val">Not Loaded</span>
+            </div>
+          </div>
+          <div class="detail-item" id="item-blood">
+            <span class="material-symbols-outlined detail-icon">bloodtype</span>
+            <div class="detail-content">
+              <span class="detail-label">Blood Group</span>
+              <span id="profile-blood" class="detail-val empty-val">Not Loaded</span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div class="profile-card">
-        
-        <div class="detail-item">
-          <span class="material-symbols-outlined detail-icon">person</span>
-          <div class="detail-content">
-            <span class="detail-label">Full Name</span>
-            <span id="profile-name" class="detail-val empty-val">Not Loaded</span>
+      <!-- Section 2: Identity Info -->
+      <div class="section-container">
+        <div class="section-title">
+          <span class="material-symbols-outlined section-icon">credit_card</span>
+          <h2>Identity Information</h2>
+        </div>
+        <div class="profile-card">
+          <div class="detail-item" id="item-aadhaar">
+            <span class="material-symbols-outlined detail-icon">fingerprint</span>
+            <div class="detail-content">
+              <span class="detail-label">Aadhaar Number</span>
+              <span id="profile-aadhaar" class="detail-val empty-val">Not Loaded</span>
+            </div>
+          </div>
+          <div class="detail-item" id="item-pan">
+            <span class="material-symbols-outlined detail-icon">featured_play_list</span>
+            <div class="detail-content">
+              <span class="detail-label">PAN Number</span>
+              <span id="profile-pan" class="detail-val empty-val">Not Loaded</span>
+            </div>
+          </div>
+          <div class="detail-item" id="item-dl">
+            <span class="material-symbols-outlined detail-icon">time_to_leave</span>
+            <div class="detail-content">
+              <span class="detail-label">Driving Licence Number</span>
+              <span id="profile-dl" class="detail-val empty-val">Not Loaded</span>
+            </div>
+          </div>
+          <div class="detail-item" id="item-voter">
+            <span class="material-symbols-outlined detail-icon">how_to_vote</span>
+            <div class="detail-content">
+              <span class="detail-label">Voter ID Number</span>
+              <span id="profile-voter" class="detail-val empty-val">Not Loaded</span>
+            </div>
           </div>
         </div>
-
-        <div class="detail-item">
-          <span class="material-symbols-outlined detail-icon">calendar_month</span>
-          <div class="detail-content">
-            <span class="detail-label">Date of Birth</span>
-            <span id="profile-dob" class="detail-val empty-val">Not Loaded</span>
-          </div>
-        </div>
-
-        <div class="detail-item">
-          <span class="material-symbols-outlined detail-icon">map</span>
-          <div class="detail-content">
-            <span class="detail-label">State</span>
-            <span id="profile-state" class="detail-val empty-val">Not Loaded</span>
-          </div>
-        </div>
-
-        <div class="detail-item">
-          <span class="material-symbols-outlined detail-icon">home</span>
-          <div class="detail-content">
-            <span class="detail-label">Address</span>
-            <span id="profile-address" class="detail-val empty-val">Not Loaded</span>
-          </div>
-        </div>
-
-        <div class="detail-item">
-          <span class="material-symbols-outlined detail-icon">payments</span>
-          <div class="detail-content">
-            <span class="detail-label">Annual Income</span>
-            <span id="profile-income" class="detail-val empty-val">Not Loaded</span>
-          </div>
-        </div>
-
-        <div class="detail-item">
-          <span class="material-symbols-outlined detail-icon">work</span>
-          <div class="detail-content">
-            <span class="detail-label">Occupation</span>
-            <span id="profile-occupation" class="detail-val empty-val">Not Loaded</span>
-          </div>
-        </div>
-
       </div>
+
+      <!-- Section 3: Address Info -->
+      <div class="section-container">
+        <div class="section-title">
+          <span class="material-symbols-outlined section-icon">home_pin</span>
+          <h2>Address Information</h2>
+        </div>
+        <div class="profile-card">
+          <div class="detail-item" id="item-address">
+            <span class="material-symbols-outlined detail-icon">home</span>
+            <div class="detail-content">
+              <span class="detail-label">Address</span>
+              <span id="profile-address" class="detail-val empty-val">Not Loaded</span>
+            </div>
+          </div>
+          <div class="detail-item" id="item-state">
+            <span class="material-symbols-outlined detail-icon">map</span>
+            <div class="detail-content">
+              <span class="detail-label">State</span>
+              <span id="profile-state" class="detail-val empty-val">Not Loaded</span>
+            </div>
+          </div>
+          <div class="detail-item" id="item-district">
+            <span class="material-symbols-outlined detail-icon">location_city</span>
+            <div class="detail-content">
+              <span class="detail-label">District</span>
+              <span id="profile-district" class="detail-val empty-val">Not Loaded</span>
+            </div>
+          </div>
+          <div class="detail-item" id="item-city">
+            <span class="material-symbols-outlined detail-icon">holiday_village</span>
+            <div class="detail-content">
+              <span class="detail-label">City / Locality</span>
+              <span id="profile-city" class="detail-val empty-val">Not Loaded</span>
+            </div>
+          </div>
+          <div class="detail-item" id="item-pin">
+            <span class="material-symbols-outlined detail-icon">tag</span>
+            <div class="detail-content">
+              <span class="detail-label">PIN Code</span>
+              <span id="profile-pin" class="detail-val empty-val">Not Loaded</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 4: Additional Info -->
+      <div class="section-container">
+        <div class="section-title">
+          <span class="material-symbols-outlined section-icon">info</span>
+          <h2>Additional Details</h2>
+        </div>
+        <div class="profile-card">
+          <div class="detail-item" id="item-income">
+            <span class="material-symbols-outlined detail-icon">payments</span>
+            <div class="detail-content">
+              <span class="detail-label">Annual Income</span>
+              <span id="profile-income" class="detail-val empty-val">Not Loaded</span>
+            </div>
+          </div>
+          <div class="detail-item" id="item-occupation">
+            <span class="material-symbols-outlined detail-icon">work</span>
+            <div class="detail-content">
+              <span class="detail-label">Occupation</span>
+              <span id="profile-occupation" class="detail-val empty-val">Not Loaded</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </main>
 
     <!-- Action Buttons Footer -->
