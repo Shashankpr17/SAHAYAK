@@ -165,13 +165,22 @@ export const EligibleSchemes: React.FC<EligibleSchemesProps> = ({ profile: _prof
             )}
           </div>
 
-          <button
-            onClick={() => navigate('/review')}
-            className="text-primary font-semibold hover:underline flex items-center gap-1 text-sm shrink-0"
-          >
-            <span className="material-symbols-outlined text-base">edit</span>
-            {language === 'en' ? 'Edit Your Profile Details' : language === 'hi' ? 'अपने प्रोफ़ाइल विवरण संपादित करें' : 'ପ୍ରୋଫାଇଲ୍ ବିବରଣୀ ସଂଶୋଧନ କରନ୍ତୁ'}
-          </button>
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
+            <button
+              onClick={() => navigate('/upload')}
+              className="bg-primary/10 hover:bg-primary/20 text-primary font-bold px-4 py-2 rounded-xl flex items-center gap-1.5 text-sm transition-all border border-primary/20"
+            >
+              <span className="material-symbols-outlined text-base">upload_file</span>
+              {language === 'en' ? 'Upload More Documents' : language === 'hi' ? 'दस्तावेज़ अपलोड करें' : 'ଦସ୍ତାବିଜ ଅପଲୋଡ୍ କରନ୍ତୁ'}
+            </button>
+            <button
+              onClick={() => navigate('/review')}
+              className="bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-semibold px-4 py-2 rounded-xl flex items-center gap-1.5 text-sm transition-all border border-outline-variant"
+            >
+              <span className="material-symbols-outlined text-base">edit</span>
+              {language === 'en' ? 'Edit Profile' : language === 'hi' ? 'प्रोफ़ाइल संपादित करें' : 'ପ୍ରୋଫାଇଲ୍ ସଂଶୋଧନ'}
+            </button>
+          </div>
         </div>
 
         {loading ? (

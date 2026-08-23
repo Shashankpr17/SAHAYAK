@@ -41,6 +41,7 @@ export interface ExtractedFieldsResponse {
 
 export interface ProfileResponse {
   success: boolean;
+  profile?: any;
   data?: {
     full_name: string | null;
     date_of_birth: string | null;

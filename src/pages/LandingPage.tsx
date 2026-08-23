@@ -132,17 +132,6 @@ export const LandingPage: React.FC = () => {
     }
   };
 
-  const handleGetStarted = async () => {
-    const token = localStorage.getItem('sahayak_token');
-    if (token) {
-      setIsLoggingIn(true);
-      await checkProfileAndNavigate(token);
-      setIsLoggingIn(false);
-    } else {
-      navigate('/upload');
-    }
-  };
-
   const handleScrollTo = (elementId: string) => {
     const element = document.getElementById(elementId);
     if (element) {
@@ -169,10 +158,18 @@ export const LandingPage: React.FC = () => {
               {isAuthenticated ? (
                 <>
                   <button
-                    onClick={handleGetStarted}
-                    className="font-label-md text-label-md bg-primary-container text-on-primary-container px-6 py-3 rounded-lg hover:shadow-floating transition-all font-bold"
+                    onClick={() => navigate('/schemes')}
+                    className="font-label-md text-label-md bg-primary text-on-primary px-6 py-3 rounded-lg hover:shadow-floating transition-all font-bold flex items-center gap-1.5"
                   >
+                    <span className="material-symbols-outlined text-[20px]">dashboard</span>
                     {t("go_to_dashboard")}
+                  </button>
+                  <button
+                    onClick={() => navigate('/upload')}
+                    className="font-label-md text-label-md bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 px-6 py-3 rounded-lg transition-all font-bold flex items-center gap-1.5"
+                  >
+                    <span className="material-symbols-outlined text-[20px]">upload_file</span>
+                    Upload Document
                   </button>
                   <button
                     onClick={() => {
@@ -184,7 +181,7 @@ export const LandingPage: React.FC = () => {
                       localStorage.removeItem('sahayak_guest_id');
                       setIsAuthenticated(false);
                     }}
-                    className="font-label-md text-label-md bg-transparent border border-outline-variant text-on-surface px-6 py-3 rounded-lg hover:bg-surface-container-low transition-colors"
+                    className="font-label-md text-label-md bg-transparent border border-outline-variant text-on-surface px-5 py-3 rounded-lg hover:bg-surface-container-low transition-colors"
                   >
                     {t("logout")}
                   </button>
@@ -237,7 +234,7 @@ export const LandingPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-gutter">
             {/* Feature 1 */}
             <div 
-              onClick={handleGetStarted}
+              onClick={() => navigate(isAuthenticated ? '/upload' : '/')}
               className="bg-surface-container-lowest rounded-xl p-8 shadow-natural-bloom border border-surface-container flex flex-col gap-4 group hover:shadow-floating transition-all duration-300 cursor-pointer"
             >
               <div className="w-12 h-12 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container mb-2 shrink-0">
@@ -251,7 +248,7 @@ export const LandingPage: React.FC = () => {
             
             {/* Feature 2 */}
             <div 
-              onClick={handleGetStarted}
+              onClick={() => navigate(isAuthenticated ? '/schemes' : '/')}
               className="bg-surface-container-lowest rounded-xl p-8 shadow-natural-bloom border border-surface-container flex flex-col gap-4 group hover:shadow-floating transition-all duration-300 cursor-pointer"
             >
               <div className="w-12 h-12 rounded-full bg-tertiary-container flex items-center justify-center text-on-tertiary-container mb-2 shrink-0">
@@ -265,7 +262,7 @@ export const LandingPage: React.FC = () => {
             
             {/* Feature 3 */}
             <div 
-              onClick={handleGetStarted}
+              onClick={() => navigate(isAuthenticated ? '/schemes' : '/')}
               className="bg-surface-container-lowest rounded-xl p-8 shadow-natural-bloom border border-surface-container flex flex-col gap-4 group hover:shadow-floating transition-all duration-300 cursor-pointer"
             >
               <div className="w-12 h-12 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container mb-2 shrink-0">

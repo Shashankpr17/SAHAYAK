@@ -43,74 +43,57 @@ export const ReviewDetails: React.FC<ReviewDetailsProps> = ({ profile, onProfile
   const [noticeMessage, setNoticeMessage] = useState<string | null>(null);
   const [noticeType, setNoticeType] = useState<'warning' | 'info' | null>(null);
 
-  // Load profile details from backend GET /api/profile when page is loaded
+  // Load profile details from backend GET /api/profile or localStorage when page is loaded
   useEffect(() => {
     const loadProfile = async () => {
+      let loadedData: any = null;
+
       try {
         console.log('[DATA FLOW] Fetching profile from GET /api/profile');
         const res = await getProfile();
         console.log('[DATA FLOW] GET /api/profile response:', res);
         
-        if (res.success && res.data) {
-          const d = res.data;
-
-          console.log("FINAL UI DATA FROM BACKEND:", {
-            fullName: d.full_name,
-            dob: d.date_of_birth,
-            state: d.state,
-            address: d.address
-          });
-
-          setFullName(d.full_name || '');
-          setDob(d.date_of_birth || '');
-          setState(d.state || '');
-          setAddress(d.address || '');
-          setAnnualIncome(d.annual_income || '');
-          setOccupation(d.occupation || '');
-          setGender(d.gender || '');
-          setFatherName(d.father_name || '');
-          setMotherName(d.mother_name || '');
-          setBloodGroup(d.blood_group || '');
-          setAadhaarNumber(d.aadhaar_number || '');
-          console.log(`[DEBUG LOG] frontend received Aadhaar exists (loadProfile): ${!!d.aadhaar_number}`);
-          setPanNumber(d.pan_number || '');
-          setDrivingLicenceNumber(d.driving_licence_number || '');
-          setVoterIdNumber(d.voter_id_number || '');
-          setDistrict(d.district || '');
-          setCity(d.city || '');
-          setPinCode(d.pin_code || '');
-          return;
+        if (res.success && (res.profile || res.data)) {
+          loadedData = res.profile || res.data;
         }
       } catch (err) {
         console.warn('[DATA FLOW WARNING] Backend /api/profile unavailable, checking client state:', err);
       }
 
-      if (profile) {
-        console.log("FINAL UI DATA FROM CLIENT PROFILE PROP:", {
-          fullName: profile.fullName,
-          dob: profile.dob,
-          state: profile.state,
-          address: profile.address
-        });
+      if (!loadedData && profile) {
+        loadedData = profile;
+      }
 
-        setFullName(profile.fullName || '');
-        setDob(profile.dob || '');
-        setState(profile.state || '');
-        setAddress(profile.address || '');
-        setAnnualIncome(profile.annualIncome || '');
-        setOccupation(profile.occupation || '');
-        setGender(profile.gender || '');
-        setFatherName(profile.fatherName || '');
-        setMotherName(profile.motherName || '');
-        setBloodGroup(profile.bloodGroup || '');
-        setAadhaarNumber(profile.aadhaarNumber || '');
-        console.log(`[DEBUG LOG] frontend received Aadhaar exists (profile fallback): ${!!profile.aadhaarNumber}`);
-        setPanNumber(profile.panNumber || '');
-        setDrivingLicenceNumber(profile.drivingLicenceNumber || '');
-        setVoterIdNumber(profile.voterIdNumber || '');
-        setDistrict(profile.district || '');
-        setCity(profile.city || '');
-        setPinCode(profile.pinCode || '');
+      if (!loadedData) {
+        const savedStr = localStorage.getItem('sahayak_user_profile');
+        if (savedStr) {
+          try {
+            loadedData = JSON.parse(savedStr);
+          } catch (e) {}
+        }
+      }
+
+      if (loadedData) {
+        const d = loadedData;
+        console.log("FINAL UI DATA APPLIED IN REVIEW DETAILS:", d);
+
+        setFullName(d.full_name || d.fullName || '');
+        setDob(d.date_of_birth || d.dob || '');
+        setState(d.state || '');
+        setAddress(d.address || '');
+        setAnnualIncome(d.annual_income !== undefined && d.annual_income !== null ? String(d.annual_income) : (d.annualIncome !== undefined && d.annualIncome !== null ? String(d.annualIncome) : ''));
+        setOccupation(d.occupation || '');
+        setGender(d.gender || '');
+        setFatherName(d.father_name || d.fatherName || '');
+        setMotherName(d.mother_name || d.motherName || '');
+        setBloodGroup(d.blood_group || d.bloodGroup || '');
+        setAadhaarNumber(d.aadhaar_number || d.aadhaarNumber || '');
+        setPanNumber(d.pan_number || d.panNumber || '');
+        setDrivingLicenceNumber(d.driving_license_number || d.driving_licence_number || d.drivingLicenceNumber || '');
+        setVoterIdNumber(d.voter_id_number || d.voterIdNumber || '');
+        setDistrict(d.district || '');
+        setCity(d.city_locality || d.city || '');
+        setPinCode(d.pin_code || d.pinCode || '');
       }
     };
 
