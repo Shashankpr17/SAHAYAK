@@ -7,6 +7,7 @@ import { ReviewDetails } from './pages/ReviewDetails';
 import { EligibleSchemes } from './pages/EligibleSchemes';
 import { SchemeDetails } from './pages/SchemeDetails';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { RefreshWarningBanner } from './components/RefreshWarningBanner';
 import type { DocumentType, UserProfile, Scheme } from './types';
 
 const App: React.FC = () => {
@@ -89,6 +90,7 @@ const App: React.FC = () => {
 
   return (
     <Router>
+      <RefreshWarningBanner />
       <Routes>
         {/* Landing Page */}
         <Route path="/" element={<LandingPage />} />
