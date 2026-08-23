@@ -198,7 +198,7 @@ export const LandingPage: React.FC = () => {
                     className="font-label-md text-label-md bg-secondary text-on-secondary px-6 py-3 rounded-lg hover:shadow-floating transition-all font-bold flex items-center gap-2 border border-transparent hover:bg-secondary/90"
                   >
                     <span className="material-symbols-outlined text-[18px]">person_outline</span>
-                    Continue as Guest
+                    {t("continue_as_guest")}
                   </button>
                 </div>
               )}
@@ -207,7 +207,7 @@ export const LandingPage: React.FC = () => {
                 className="font-label-md text-label-md bg-secondary/15 hover:bg-secondary/25 text-secondary border border-secondary/40 px-5 py-3 rounded-lg font-bold flex items-center gap-2 transition-all shadow-sm"
               >
                 <span className="material-symbols-outlined text-[20px]">extension</span>
-                Add Chrome Extension
+                {t("add_chrome_extension")}
               </button>
               <button
                 onClick={() => handleScrollTo('how-it-works')}
@@ -333,8 +333,8 @@ export const LandingPage: React.FC = () => {
                 <span className="material-symbols-outlined text-[28px]">extension</span>
               </div>
               <div>
-                <h3 className="font-title-lg text-lg font-bold text-on-surface">Install SAHAYAK Extension</h3>
-                <p className="text-xs text-on-surface-variant">Instant 1-minute setup without Web Store fees</p>
+                <h3 className="font-title-lg text-lg font-bold text-on-surface">{t("install_ext_title")}</h3>
+                <p className="text-xs text-on-surface-variant">{t("install_ext_subtitle")}</p>
               </div>
             </div>
 
@@ -343,17 +343,17 @@ export const LandingPage: React.FC = () => {
               <div className="flex gap-3 items-start bg-surface-container-low p-3 rounded-xl border border-outline-variant/20">
                 <span className="w-6 h-6 rounded-full bg-primary text-on-primary font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">1</span>
                 <div className="flex-grow">
-                  <p className="font-semibold text-on-surface">Download the Extension Package</p>
-                  <p className="text-xs text-on-surface-variant mt-0.5">Click the button below to download and unzip <code>sahayak-extension.zip</code>.</p>
+                  <p className="font-semibold text-on-surface">{t("ext_step1_title")}</p>
+                  <p className="text-xs text-on-surface-variant mt-0.5">{t("ext_step1_desc")}</p>
                 </div>
               </div>
 
               <div className="flex gap-3 items-start bg-surface-container-low p-3 rounded-xl border border-outline-variant/20">
                 <span className="w-6 h-6 rounded-full bg-primary text-on-primary font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">2</span>
                 <div className="flex-grow">
-                  <p className="font-semibold text-on-surface">Open Chrome Extensions</p>
+                  <p className="font-semibold text-on-surface">{t("ext_step2_title")}</p>
                   <p className="text-xs text-on-surface-variant mt-0.5">
-                    Navigate to <code className="bg-surface-container px-1 py-0.5 rounded font-mono text-[11px]">chrome://extensions</code> and turn ON <strong>Developer mode</strong> (top-right).
+                    {t("ext_step2_desc")}
                   </p>
                   <button
                     onClick={() => {
@@ -364,7 +364,7 @@ export const LandingPage: React.FC = () => {
                     className="mt-1.5 text-xs text-primary font-bold hover:underline flex items-center gap-1"
                   >
                     <span className="material-symbols-outlined text-[14px]">content_copy</span>
-                    {copiedUrl ? 'Copied chrome://extensions!' : 'Copy "chrome://extensions"'}
+                    {copiedUrl ? t("copied_extensions_url") : t("copy_extensions_url")}
                   </button>
                 </div>
               </div>
@@ -372,8 +372,8 @@ export const LandingPage: React.FC = () => {
               <div className="flex gap-3 items-start bg-surface-container-low p-3 rounded-xl border border-outline-variant/20">
                 <span className="w-6 h-6 rounded-full bg-primary text-on-primary font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">3</span>
                 <div className="flex-grow">
-                  <p className="font-semibold text-on-surface">Click "Load unpacked"</p>
-                  <p className="text-xs text-on-surface-variant mt-0.5">Click <strong>Load unpacked</strong> (top-left) and select the unzipped <code>extension</code> folder. Done!</p>
+                  <p className="font-semibold text-on-surface">{t("ext_step3_title")}</p>
+                  <p className="text-xs text-on-surface-variant mt-0.5">{t("ext_step3_desc")}</p>
                 </div>
               </div>
             </div>
@@ -386,7 +386,7 @@ export const LandingPage: React.FC = () => {
                 className="flex-1 bg-secondary hover:bg-secondary/90 text-on-secondary py-3 px-4 rounded-xl font-bold text-center flex items-center justify-center gap-2 shadow-sm transition-all text-sm"
               >
                 <span className="material-symbols-outlined text-[18px]">download</span>
-                Download Extension (.zip)
+                {t("download_ext_zip")}
               </a>
               <a
                 href="/test-form.html"
@@ -395,7 +395,7 @@ export const LandingPage: React.FC = () => {
                 className="bg-surface-container-high hover:bg-surface-container-highest text-on-surface py-3 px-4 rounded-xl font-bold text-center flex items-center justify-center gap-1.5 border border-outline-variant text-sm transition-all"
               >
                 <span className="material-symbols-outlined text-[18px]">open_in_new</span>
-                Open Test Form
+                {t("open_test_form")}
               </a>
             </div>
 

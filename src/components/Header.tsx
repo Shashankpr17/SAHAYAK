@@ -95,7 +95,7 @@ export const Header: React.FC<HeaderProps> = ({ minimal = false }) => {
                 title="Download SAHAYAK Chrome Extension"
               >
                 <span className="material-symbols-outlined text-[18px]">extension</span>
-                <span>Add Extension</span>
+                <span>{t("add_extension")}</span>
               </a>
               
               {/* Language Selector Dropdown */}
