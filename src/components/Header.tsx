@@ -66,7 +66,7 @@ export const Header: React.FC<HeaderProps> = ({ minimal = false }) => {
           <img 
             alt="National Emblem" 
             className="h-8 w-auto inline-block mr-2"
-            src="https://lh3.googleusercontent.com/aida/AP1WRLvpacausV289CU9wbrAYrstiDM35Kyo3CN87nc0Gfp9QY6gCcaDsTwNN38c2XVpFb3M_Jo-2Q7X6F_PGpFFIQlNoAT6K__6BF0CC75k77cjCypZ8sT9rrrz5SCSLArQfME1daiSxtGedJHV8a4je-_Rl7MFHVYiJxNk2HfcuBI08dSB0ehcXIkoxj-ad4b8fAEAOrhtH1VJcwRo1gBdQHAQgjWVS-TO9srGotOFfch7SrmaMgOELW0S3v8"
+            src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Emblem_of_India.svg/160px-Emblem_of_India.svg.png"
           />
           {t("logo")}
         </Link>
