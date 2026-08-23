@@ -69,6 +69,9 @@ export const EligibleSchemes: React.FC<EligibleSchemesProps> = ({ profile: _prof
         ? t('gender_male') === 'Male' ? 'May Be Eligible' : language === 'hi' ? 'संभावित योग्य' : 'ଯୋଗ୍ୟ ହୋଇପାରନ୍ତି'
         : t('gender_male') === 'Male' ? 'More Info Needed' : language === 'hi' ? 'अतिरिक्त जानकारी आवश्यक' : 'ଅଧିକ ସୂଚନା ଆବଶ୍ୟକ';
 
+    const matchedMasterScheme = SCHEMES.find(s => s.id.toLowerCase() === scheme.id.toLowerCase());
+    const benefitText = (matchedMasterScheme?.benefitAmount as any)?.[language] || matchedMasterScheme?.benefitAmount?.en;
+
     return (
       <div
         key={scheme.id}
@@ -87,6 +90,23 @@ export const EligibleSchemes: React.FC<EligibleSchemesProps> = ({ profile: _prof
           <h3 className="font-headline-sm text-xl font-bold text-on-surface mb-3">
             {scheme.name}
           </h3>
+
+          {/* Beneficiary / Credit Amount Badge */}
+          {benefitText && (
+            <div className="mb-4 flex items-center gap-2.5 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-emerald-500/10 border border-amber-500/25 dark:border-amber-400/30 px-3.5 py-2 rounded-xl shadow-xs">
+              <span className="material-symbols-outlined text-amber-600 dark:text-amber-400 text-lg shrink-0">
+                payments
+              </span>
+              <div className="flex flex-col min-w-0">
+                <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider leading-none mb-0.5">
+                  {t("benefit_amount")}
+                </span>
+                <span className="text-sm font-extrabold text-on-surface tracking-tight truncate">
+                  {benefitText}
+                </span>
+              </div>
+            </div>
+          )}
 
           {/* Explainable Reasons */}
           {scheme.reasons && scheme.reasons.length > 0 && (

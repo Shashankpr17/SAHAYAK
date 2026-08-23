@@ -63,6 +63,7 @@ export const SchemeDetails: React.FC<SchemeDetailsProps> = ({ selectedScheme }) 
   }
   const officialLink = resolvedOfficialLink;
 
+  const benefitAmount = (localFallback.benefitAmount as any)?.[language] || localFallback.benefitAmount?.en || (typeof localFallback.benefits === 'object' ? (localFallback.benefits as any)[language] || localFallback.benefits.en : localFallback.benefits);
   const criteriaText = formalData?.eligibility_criteria || (typeof localFallback.description === 'object' ? (localFallback.description as any)[language] || localFallback.description.en : localFallback.description);
   const parameters = formalData?.parameters_evaluated || ['Age', 'Income', 'State', 'Occupation'];
   const requiredDocs = formalData?.required_documents || (localFallback.requiredDocs ? localFallback.requiredDocs.map(d => d.name) : ['Aadhaar Card', 'Identity Proof', 'Income Proof']);
@@ -76,6 +77,7 @@ export const SchemeDetails: React.FC<SchemeDetailsProps> = ({ selectedScheme }) 
       explainDesc: 'Switch to a friendly, easy-to-understand explanation of this scheme.',
       simpleTitle: 'The Simple Version',
       officialTitle: 'Official Information',
+      financialBenefit: 'Financial Benefit / Credit Value',
       howToGet: 'How do you get it?',
       whoCanGet: 'Who can get this?',
       requiredDocs: 'Required Documents',
@@ -94,6 +96,7 @@ export const SchemeDetails: React.FC<SchemeDetailsProps> = ({ selectedScheme }) 
       explainDesc: 'इस योजना के बारे में एक आसान और समझने योग्य विवरण देखें।',
       simpleTitle: 'सरल संस्करण',
       officialTitle: 'आधिकारिक जानकारी',
+      financialBenefit: 'वित्तीय लाभ / क्रेडिट मूल्य',
       howToGet: 'यह आपको कैसे मिलेगा?',
       whoCanGet: 'यह किसे मिल सकता है?',
       requiredDocs: 'आवश्यक दस्तावेज',
@@ -112,6 +115,7 @@ export const SchemeDetails: React.FC<SchemeDetailsProps> = ({ selectedScheme }) 
       explainDesc: 'ଏହି ଯୋଜନା ବିଷୟରେ ଏକ ସରଳ ଏବଂ ସହଜ ବୁଝାପଡ଼ୁଥିବା ବିବରଣୀ ଦେଖନ୍ତୁ |',
       simpleTitle: 'ସରଳ ସଂସ୍କରଣ',
       officialTitle: 'ଆଧିକାରିକ ସୂଚନା',
+      financialBenefit: 'ଆର୍ଥିକ ଲାଭ / କ୍ରେଡିଟ୍ ମୂଲ୍ୟ',
       howToGet: 'ଏହା ଆପଣଙ୍କୁ କିପରି ମିଳିବ?',
       whoCanGet: 'ଏହା କାହାକୁ ମିଳିପାରିବ?',
       requiredDocs: 'ଆବଶ୍ୟକୀୟ ଦସ୍ତାବେଜ',
@@ -130,6 +134,7 @@ export const SchemeDetails: React.FC<SchemeDetailsProps> = ({ selectedScheme }) 
     explainDesc: 'Switch to a friendly, easy-to-understand explanation of this scheme.',
     simpleTitle: 'The Simple Version',
     officialTitle: 'Official Information',
+    financialBenefit: 'Financial Benefit / Credit Value',
     howToGet: 'How do you get it?',
     whoCanGet: 'Who can get this?',
     requiredDocs: 'Required Documents',
@@ -248,6 +253,25 @@ export const SchemeDetails: React.FC<SchemeDetailsProps> = ({ selectedScheme }) 
             
             {/* Main Content Area */}
             <div className="lg:col-span-8 space-y-8">
+
+              {/* Financial Benefit / Credit Value Summary Card */}
+              {benefitAmount && (
+                <div className="bg-gradient-to-r from-emerald-500/10 via-amber-500/10 to-primary/10 rounded-2xl p-6 md:p-7 border border-emerald-500/25 dark:border-emerald-400/30 shadow-natural-bloom flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-emerald-600/15 dark:bg-emerald-400/20 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shrink-0 border border-emerald-600/20">
+                      <span className="material-symbols-outlined text-2xl">account_balance_wallet</span>
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider block">
+                        {labels.financialBenefit}
+                      </span>
+                      <h2 className="text-xl sm:text-2xl font-black text-on-surface tracking-tight mt-0.5">
+                        {benefitAmount}
+                      </h2>
+                    </div>
+                  </div>
+                </div>
+              )}
               
               {explainSimply && explanationData ? (
                 /* Explain Simply: Simple Version Card */

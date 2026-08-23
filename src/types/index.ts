@@ -40,6 +40,7 @@ export interface Scheme {
   category: string;
   state: string;
   official_link?: string;
+  benefitAmount?: SchemeTranslation;
   description: SchemeTranslation;
   benefits: SchemeTranslation;
   eligibilityCriteria: SchemeListTranslation;

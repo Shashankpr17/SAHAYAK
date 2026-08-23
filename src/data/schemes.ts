@@ -7,6 +7,11 @@ export const SCHEMES: Scheme[] = [
     category: 'Agriculture & Farming',
     state: 'All States',
     official_link: 'https://pmkisan.gov.in/',
+    benefitAmount: {
+      en: '₹6,000 / year (3 installments of ₹2,000)',
+      hi: '₹6,000 / वर्ष (₹2,000 की 3 किस्तें)',
+      or: 'ବାର୍ଷିକ ₹୬,୦୦୦ (₹୨,୦୦୦ ର ୩ଟି କିସ୍ତି)'
+    },
     description: {
       en: 'PM-KISAN provides income support of ₹6,000 per year in three equal installments to all landholding farmer families across India.',
       hi: 'PM-KISAN योजना भारत भर के सभी भूमिधारक किसान परिवारों को ₹6,000 प्रति वर्ष की आय सहायता तीन समान किस्तों में प्रदान करती है।',
@@ -49,6 +54,11 @@ export const SCHEMES: Scheme[] = [
     category: 'Health & Insurance',
     state: 'All States',
     official_link: 'https://pmjay.gov.in/',
+    benefitAmount: {
+      en: 'Up to ₹5,00,000 / year (Cashless cover)',
+      hi: '₹5,00,000 प्रति वर्ष तक (कैशलेस कवर)',
+      or: 'ବାର୍ଷିକ ₹୫,୦୦,୦୦୦ ପର୍ଯ୍ୟନ୍ତ (କ୍ୟାସଲେସ ସୁରକ୍ଷା)'
+    },
     description: {
       en: 'Ayushman Bharat PM-JAY provides health insurance coverage of up to ₹5 Lakh per family per year for secondary and tertiary care hospitalization.',
       hi: 'आयुष्मान भारत पीएम-जेएवाई गरीब और कमजोर परिवारों को अस्पताल में भर्ती होने पर प्रति वर्ष ₹5 लाख तक का स्वास्थ्य कवर प्रदान करता है।',
@@ -90,6 +100,11 @@ export const SCHEMES: Scheme[] = [
     category: 'Health & Insurance',
     state: 'All States',
     official_link: 'https://jansuraksha.gov.in/',
+    benefitAmount: {
+      en: '₹2,00,000 life insurance cover',
+      hi: '₹2,00,000 जीवन बीमा कवर',
+      or: '₹୨,୦୦,୦୦୦ ଜୀବନ ବୀମା ସୁରକ୍ଷା'
+    },
     description: {
       en: 'Life insurance cover of ₹2 Lakh for death due to any reason for persons aged 18 to 50 years with a bank account.',
       hi: '18 से 50 वर्ष की आयु के बैंक खाताधारकों के लिए किसी भी कारण से मृत्यु होने पर ₹2 लाख का जीवन बीमा कवर।',
@@ -131,6 +146,11 @@ export const SCHEMES: Scheme[] = [
     category: 'Health & Insurance',
     state: 'All States',
     official_link: 'https://jansuraksha.gov.in/',
+    benefitAmount: {
+      en: '₹2,00,000 accidental insurance cover',
+      hi: '₹2,00,000 दुर्घटना बीमा कवर',
+      or: '₹୨,୦୦,୦୦୦ ଦୁର୍ଘଟଣା ବୀମା ସୁରକ୍ଷା'
+    },
     description: {
       en: 'Accident insurance coverage of ₹2 Lakh for accidental death or permanent disability for ₹20 per year.',
       hi: 'दुर्घटना मृत्यु या स्थायी विकलांगता के लिए ₹20 प्रति वर्ष पर ₹2 लाख का दुर्घटना बीमा कवर।',
@@ -172,6 +192,11 @@ export const SCHEMES: Scheme[] = [
     category: 'Agriculture & Farming',
     state: 'All States',
     official_link: 'https://maandhan.in/',
+    benefitAmount: {
+      en: '₹3,000 / month guaranteed pension after age 60',
+      hi: '60 वर्ष की आयु के बाद ₹3,000 / माह गारंटीकृत पेंशन',
+      or: '୬୦ ବର୍ଷ ପରେ ମାସିକ ₹୩,୦୦୦ ନିଶ୍ଚିତ ପେନସନ୍'
+    },
     description: {
       en: 'Old age pension scheme assuring ₹3,000 monthly pension to small and marginal farmers after age 60.',
       hi: 'वृद्धावस्था पेंशन योजना जो 60 वर्ष की आयु के बाद छोटे और सीमांत किसानों को ₹3,000 मासिक पेंशन सुनिश्चित करती है।',
@@ -214,6 +239,11 @@ export const SCHEMES: Scheme[] = [
     category: 'Agriculture & Farming',
     state: 'All States',
     official_link: 'https://pmfby.gov.in/',
+    benefitAmount: {
+      en: 'Up to 100% crop loss sum insured',
+      hi: '100% फसल नुकसान तक बीमित राशि',
+      or: '୧୦୦% ଫସଲ କ୍ଷତି ପର୍ଯ୍ୟନ୍ତ ବୀମା ରାଶି'
+    },
     description: {
       en: 'Comprehensive crop insurance against natural calamities, pests, and diseases at lowest premium rates.',
       hi: 'न्यूनतम प्रीमियम दरों पर प्राकृतिक आपदाओं, कीटों और बीमारियों के खिलाफ व्यापक फसल बीमा।',
@@ -256,6 +286,11 @@ export const SCHEMES: Scheme[] = [
     category: 'Education',
     state: 'All States',
     official_link: 'https://scholarships.gov.in/',
+    benefitAmount: {
+      en: '₹12,000 / year (Class 9 to 12)',
+      hi: '₹12,000 / वर्ष (कक्षा 9 से 12)',
+      or: 'ବାର୍ଷିକ ₹୧୨,୦୦୦ (ନବମ ରୁ ଦ୍ୱାଦଶ ଶ୍ରେଣୀ)'
+    },
     description: {
       en: 'Scholarship of ₹12,000 per year to meritorious students of economically weaker sections from Class 9 to 12.',
       hi: 'आर्थिक रूप से कमजोर वर्ग के मेधावी छात्रों को कक्षा 9 से 12 तक प्रति वर्ष ₹12,000 की छात्रवृत्ति।',
@@ -298,6 +333,11 @@ export const SCHEMES: Scheme[] = [
     category: 'Education',
     state: 'All States',
     official_link: 'https://scholarships.gov.in/',
+    benefitAmount: {
+      en: '₹12,000/yr (UG) to ₹20,000/yr (PG)',
+      hi: '₹12,000/वर्ष (UG) से ₹20,000/वर्ष (PG)',
+      or: 'ବାର୍ଷିକ ₹୧୨,୦୦୦ (UG) ରୁ ₹୨୦,୦୦୦ (PG)'
+    },
     description: {
       en: 'Tuition reimbursement and maintenance allowance for post-secondary and college students from low-income families.',
       hi: 'कम आय वाले परिवारों के कॉलेज और उच्च शिक्षा के छात्रों के लिए ट्यूशन फीस प्रतिपूर्ति और वजीफा।',
@@ -340,6 +380,11 @@ export const SCHEMES: Scheme[] = [
     category: 'Employment & Business',
     state: 'All States',
     official_link: 'https://www.kviconline.gov.in/pmegpeportal/',
+    benefitAmount: {
+      en: 'Up to ₹50L (Mfg) / ₹20L (Service) with 15–35% subsidy',
+      hi: '15-35% सब्सिडी के साथ ₹50 लाख (विनिर्माण) / ₹20 लाख (सेवा) तक',
+      or: '୧୫–୩୫% ସବସିଡି ସହିତ ₹୫୦ ଲକ୍ଷ (ଉତ୍ପାଦନ) / ₹୨୦ ଲକ୍ଷ (ସେବା) ପର୍ଯ୍ୟନ୍ତ'
+    },
     description: {
       en: 'Credit-linked subsidy program providing up to 35% government subsidy for starting new micro-enterprises in manufacturing or service sector.',
       hi: 'विनिर्माण या सेवा क्षेत्र में नए सूक्ष्म उद्यम शुरू करने के लिए 35% तक सरकारी सब्सिडी प्रदान करने वाला कार्यक्रम।',
@@ -382,6 +427,11 @@ export const SCHEMES: Scheme[] = [
     category: 'Employment & Business',
     state: 'All States',
     official_link: 'https://www.mudra.org.in/',
+    benefitAmount: {
+      en: 'Mudra loans up to ₹10 Lakh',
+      hi: '₹10 लाख तक का मुद्रा ऋण',
+      or: '₹୧୦ ଲକ୍ଷ ପର୍ଯ୍ୟନ୍ତ ମୁଦ୍ରା ଋଣ'
+    },
     description: {
       en: 'Collateral-free business loans up to ₹10 Lakh for small, micro, and retail enterprises under Shishu, Kishore, and Tarun categories.',
       hi: 'शिशु, किशोर और तरुण श्रेणियों के तहत छोटे, सूक्ष्म और खुदरा उद्यमों के लिए ₹10 लाख तक का संपार्श्विक-मुक्त ऋण।',
@@ -423,6 +473,11 @@ export const SCHEMES: Scheme[] = [
     category: 'Housing',
     state: 'All States',
     official_link: 'https://pmaymis.gov.in/',
+    benefitAmount: {
+      en: 'Up to ₹2.50L–₹2.67L interest subsidy',
+      hi: '₹2.50 लाख से ₹2.67 लाख तक ब्याज सब्सिडी',
+      or: '₹୨.୫୦ ଲକ୍ଷ–₹୨.୬୭ ଲକ୍ଷ ପର୍ଯ୍ୟନ୍ତ ସୁଧ ରିହାତି'
+    },
     description: {
       en: 'Housing for All in urban areas providing financial assistance and interest subsidy up to ₹2.67 Lakh for building or buying a pucca house.',
       hi: 'शहरी क्षेत्रों में पक्का मकान बनाने या खरीदने के लिए ₹2.67 लाख तक की वित्तीय सहायता और ब्याज सब्सिडी।',
@@ -465,6 +520,11 @@ export const SCHEMES: Scheme[] = [
     category: 'Housing',
     state: 'All States',
     official_link: 'https://pmayg.nic.in/',
+    benefitAmount: {
+      en: '₹1.20L–₹1.30L direct grant + MGNREGA wages',
+      hi: '₹1.20 लाख से ₹1.30 लाख सीधा अनुदान + मनरेगा मजदूरी',
+      or: '₹୧.୨୦ ଲକ୍ଷ–₹୧.୩୦ ଲକ୍ଷ ସିଧାସଳଖ ଅନୁଦାନ + ମନରେଗା ମଜୁରୀ'
+    },
     description: {
       en: 'Financial assistance of ₹1.20 Lakh in plains and ₹1.30 Lakh in hilly/difficult areas for construction of a hygienic pucca house in rural areas.',
       hi: 'ग्रामीण क्षेत्रों में पक्के मकान के निर्माण के लिए मैदानी इलाकों में ₹1.20 लाख और पहाड़ी/कठिन क्षेत्रों में ₹1.30 लाख की वित्तीय सहायता।',
@@ -507,6 +567,11 @@ export const SCHEMES: Scheme[] = [
     category: 'Education & Welfare',
     state: 'Delhi',
     official_link: 'https://edudel.nic.in/',
+    benefitAmount: {
+      en: 'Financial aid up to ₹50,000',
+      hi: '₹50,000 तक की वित्तीय सहायता',
+      or: '₹୫୦,୦୦୦ ପର୍ଯ୍ୟନ୍ତ ଆର୍ଥିକ ସହାୟତା'
+    },
     description: {
       en: 'Welfare scheme providing financial relief and medical assistance to school teachers in distress.',
       hi: 'संकटग्रस्त स्कूली शिक्षकों को वित्तीय राहत और चिकित्सा सहायता प्रदान करने वाली कल्याणकारी योजना।',
