@@ -5,3 +5,4 @@ pypdf
 Pillow
 firebase-admin
 groq
+google-generativeai

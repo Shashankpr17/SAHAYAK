@@ -1,7 +1,7 @@
 """
-groq_service.py — Groq Vision OCR + Structured Extraction for SAHAYAK
+groq_service.py — OCR + Structured Extraction for SAHAYAK
 
-Stage 1: Image/PDF page bytes → Groq Vision → raw OCR text
+Stage 1: Image bytes → Google Gemini Flash Vision → raw OCR text
 Stage 2: Raw OCR text → Groq LLM → canonical profile JSON
 """
 
@@ -20,13 +20,13 @@ from fastapi import HTTPException, status
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _get_client():
-    """Return a Groq client, raising a safe 500 if the key is missing."""
+def _get_groq_client():
+    """Return a Groq client. Raises safe 500 if key is missing."""
     api_key = os.getenv("GROQ_API_KEY")
     if not api_key:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="OCR service is not configured (missing API key). Contact admin."
+            detail="Extraction service is not configured. Contact admin."
         )
     try:
         from groq import Groq
@@ -34,26 +34,39 @@ def _get_client():
     except ImportError:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="OCR service library is not installed. Contact admin."
+            detail="Extraction service library missing. Contact admin."
         )
 
 
-def _image_to_data_url(image_bytes: bytes, mime_type: str = "image/jpeg") -> str:
-    """Encode raw image bytes as a base64 data URL for Groq Vision."""
-    b64 = base64.b64encode(image_bytes).decode("utf-8")
-    return f"data:{mime_type}; base64,{b64}"
+def _get_gemini_client():
+    """Return a configured Gemini GenerativeModel. Raises safe 500 if key missing."""
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="OCR service is not configured (missing GEMINI_API_KEY). Contact admin."
+        )
+    try:
+        import google.generativeai as genai
+        genai.configure(api_key=api_key)
+        return genai.GenerativeModel("gemini-2.0-flash-lite")
+    except ImportError:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="OCR service library missing. Contact admin."
+        )
 
 
 def _preprocess_image(image_bytes: bytes) -> bytes:
     """
-    Orientation-correct, convert to RGB JPEG.
-    Returns original bytes on any failure (graceful degradation).
+    Correct orientation, convert to RGB JPEG.
+    Returns original bytes on failure (graceful degradation).
     """
     try:
         from PIL import Image, ImageOps
         img = Image.open(io.BytesIO(image_bytes))
         img = ImageOps.exif_transpose(img)
-        if img.mode not in ("RGB", "L"):
+        if img.mode not in ("RGB",):
             img = img.convert("RGB")
         buf = io.BytesIO()
         img.save(buf, format="JPEG", quality=92)
@@ -64,16 +77,16 @@ def _preprocess_image(image_bytes: bytes) -> bytes:
 
 
 # ---------------------------------------------------------------------------
-# Stage 1 — Groq Vision -> raw OCR text
+# Stage 1 — Gemini Flash Vision → raw OCR text
 # ---------------------------------------------------------------------------
 
-_VISION_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct"
-
 _VISION_PROMPT = (
-    "You are an expert OCR assistant. Transcribe ALL visible text from this "
-    "Indian government document image EXACTLY as it appears — every character, "
-    "label, number, and line. Preserve spacing and line breaks. "
-    "Do NOT summarize, explain, translate, or skip any text. "
+    "You are an expert OCR assistant specialising in Indian government documents "
+    "(Aadhaar, PAN, Driving Licence, Voter ID, income certificates, ration cards, etc.).\n\n"
+    "Transcribe ALL visible text from this document image EXACTLY as it appears — "
+    "every character, label, number, date, and line. "
+    "Preserve spacing, line breaks, and label-value pairs (e.g. 'Date of Birth: 01/01/1990'). "
+    "Do NOT summarise, translate, interpret, or skip any text. "
     "Output ONLY the raw transcribed text, nothing else."
 )
 
@@ -84,49 +97,52 @@ def extract_raw_text_from_image_bytes(
     filename: str = "document"
 ) -> str:
     """
-    Send image bytes to Groq Vision and return extracted raw text.
-    Raises HTTPException on Groq API errors.
+    Send image bytes to Gemini Flash Vision and return extracted raw OCR text.
     """
     if not image_bytes:
         raise ValueError(f"Image '{filename}' is empty.")
 
     processed = _preprocess_image(image_bytes)
-    data_url = _image_to_data_url(processed, "image/jpeg")
-
-    client = _get_client()
-    print(f"[GROQ_SERVICE] Calling Vision on '{filename}' ({len(processed)} bytes)...")
 
     try:
-        response = client.chat.completions.create(
-            model=_VISION_MODEL,
-            messages=[
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": _VISION_PROMPT},
-                        {"type": "image_url", "image_url": {"url": data_url}},
-                    ],
-                }
-            ],
-            temperature=0.0,
-            max_tokens=4096,
-        )
-        raw_text = response.choices[0].message.content or ""
-        print(f"[GROQ_SERVICE] Vision returned {len(raw_text)} chars for '{filename}'.")
+        import google.generativeai as genai
+
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="OCR service is not configured (missing GEMINI_API_KEY). Contact admin."
+            )
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel("gemini-2.0-flash-lite")
+
+        # Build inline image part
+        image_part = {
+            "inline_data": {
+                "mime_type": "image/jpeg",
+                "data": base64.b64encode(processed).decode("utf-8")
+            }
+        }
+
+        print(f"[GROQ_SERVICE] Gemini Vision OCR: '{filename}' ({len(processed)} bytes)...")
+        response = model.generate_content([_VISION_PROMPT, image_part])
+        raw_text = response.text or ""
+        print(f"[GROQ_SERVICE] Gemini OCR returned {len(raw_text)} chars for '{filename}'.")
         return raw_text.strip()
+
     except HTTPException:
         raise
     except Exception as e:
         err_str = str(e)
-        print(f"[GROQ_SERVICE] Vision call failed for '{filename}': {err_str}")
+        print(f"[GROQ_SERVICE] Gemini Vision failed for '{filename}': {err_str}")
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"Groq Vision OCR failed for '{filename}': {err_str}"
+            detail=f"OCR failed for '{filename}'. Please ensure the image is clear and try again."
         )
 
 
 # ---------------------------------------------------------------------------
-# Stage 2 — Groq LLM -> structured profile JSON
+# Stage 2 — Groq LLM → structured profile JSON
 # ---------------------------------------------------------------------------
 
 _EXTRACT_MODEL = "llama-3.3-70b-versatile"
@@ -137,40 +153,48 @@ You MUST follow these rules without exception:
 
 1. OUTPUT: Return ONLY a single valid JSON object. No markdown fences, no explanation, no prose.
 2. NULL: Use JSON null (not "null", not "N/A", not "Not available") when a field is genuinely absent.
-3. NAMES: Extract the person's own name only. Reject document titles, government names, addresses, occupations.
-4. DOB: Use the value explicitly labelled "Date of Birth", "DOB", "D.O.B", "Birth Date". NEVER pick the first date seen. Format as DD/MM/YYYY.
-5. AADHAAR: Must be exactly 12 digits. Never confuse with VID (16 digits), phone (10 digits), or PIN (6 digits).
-6. PAN: Format is exactly AAAAA9999A (5 letters, 4 digits, 1 letter). Reject anything else.
-7. ADDRESS: Full address as printed. Do NOT split into sub-fields unless they are explicitly labelled.
-8. STATE: One of the 28 Indian states or 8 UTs. Normalize spelling.
-9. INCOME: Numeric value only (digits and optional decimal). No currency symbols.
-10. NEVER invent or guess values. If unsure, use null.
+3. NAMES: Extract the person's own full name only. Reject document titles, issuing authority names, government entity names, addresses, and occupations.
+4. DOB: Extract ONLY the value explicitly labelled "Date of Birth", "DOB", "D.O.B", "Birth Date", "जन्म तिथि". NEVER pick the first date seen or an unlabelled date. Format as DD/MM/YYYY.
+5. AADHAAR: Must be exactly 12 digits (may appear as 4-4-4 groups). Never confuse with VID (16 digits), phone (10 digits), or PIN (6 digits).
+6. PAN: Format is exactly 5 uppercase letters + 4 digits + 1 uppercase letter (e.g. ABCDE1234F). Reject anything else.
+7. DRIVING_LICENSE: Alphanumeric, typically starts with state code (e.g. KA01..., MH02...).
+8. VOTER_ID: Alphanumeric, typically 3 letters + 7 digits (e.g. ABC1234567).
+9. ADDRESS: Full address as printed on document. Preserve all lines.
+10. STATE: Must be one of the 28 Indian states or 8 UTs. Normalize spelling to full English name.
+11. DISTRICT: District name as printed.
+12. CITY_LOCALITY: City, town, village, or locality name.
+13. PIN_CODE: Exactly 6 digits. Never confuse with Aadhaar or phone numbers.
+14. INCOME: Digits only (no currency symbols, no commas, no Rs/INR prefix).
+15. GENDER: "Male", "Female", or "Transgender" only.
+16. BLOOD_GROUP: One of A+, A-, B+, B-, O+, O-, AB+, AB-. Null if not present.
+17. NEVER invent, guess, or hallucinate values. If unsure, use null.
 
 Return exactly this JSON structure (no extra keys):
 {
-  "full_name": string | null,
-  "date_of_birth": string | null,
-  "gender": string | null,
-  "father_name": string | null,
-  "mother_name": string | null,
-  "blood_group": string | null,
-  "aadhaar_number": string | null,
-  "pan_number": string | null,
-  "driving_license_number": string | null,
-  "voter_id_number": string | null,
-  "address": string | null,
-  "state": string | null,
-  "district": string | null,
-  "city_locality": string | null,
-  "pin_code": string | null,
-  "annual_income": string | null,
-  "occupation": string | null
+  "full_name": null,
+  "date_of_birth": null,
+  "gender": null,
+  "father_name": null,
+  "mother_name": null,
+  "blood_group": null,
+  "aadhaar_number": null,
+  "pan_number": null,
+  "driving_license_number": null,
+  "voter_id_number": null,
+  "address": null,
+  "state": null,
+  "district": null,
+  "city_locality": null,
+  "pin_code": null,
+  "annual_income": null,
+  "occupation": null
 }"""
 
 
 def _clean_json_response(text: str) -> str:
-    """Strip markdown fences and leading/trailing whitespace from LLM output."""
+    """Strip markdown fences and whitespace from LLM output."""
     text = text.strip()
+    # Remove ```json ... ``` or ``` ... ```
     text = re.sub(r"^```(?:json)?\s*", "", text, flags=re.IGNORECASE)
     text = re.sub(r"\s*```$", "", text)
     return text.strip()
@@ -178,13 +202,14 @@ def _clean_json_response(text: str) -> str:
 
 def _merge_profiles(base: Dict[str, Any], new: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Merge two extracted profile dicts.
-    Rule: prefer non-null, non-empty values from 'new', but never overwrite
-    a valid 'base' value with null/empty from 'new'.
+    Merge two profile dicts.
+    Never overwrites a valid (non-null, non-empty) base value with null/empty from new.
+    Always fills null/empty base with valid values from new.
     """
     merged = dict(base)
     for key, new_val in new.items():
         existing = merged.get(key)
+        # Only update if existing is absent AND new has a real value
         if new_val is not None and new_val != "" and (existing is None or existing == ""):
             merged[key] = new_val
     return merged
@@ -195,12 +220,11 @@ def extract_structured_fields_groq(
     document_type: Optional[str] = None
 ) -> Dict[str, Any]:
     """
-    Given a list of raw OCR strings (one per document), call Groq LLM to
-    extract structured profile fields, merging results across all documents.
-
+    Given a list of raw OCR strings (one per document), extract structured
+    profile fields using Groq LLM, merging results across all documents.
     Returns canonical profile dict.
     """
-    client = _get_client()
+    client = _get_groq_client()
 
     blank: Dict[str, Any] = {
         "full_name": None, "date_of_birth": None, "gender": None,
@@ -222,7 +246,7 @@ def extract_structured_fields_groq(
         doc_hint = f"Document type hint: {document_type}.\n\n" if document_type else ""
         user_content = (
             f"{doc_hint}OCR TEXT:\n{raw_text}\n\n"
-            "Extract and return the JSON profile."
+            "Extract and return the JSON profile now."
         )
 
         print(f"[GROQ_SERVICE] Extracting fields from doc #{idx + 1} ({len(raw_text)} chars)...")
@@ -241,6 +265,7 @@ def extract_structured_fields_groq(
             cleaned = _clean_json_response(raw_json)
             parsed = json.loads(cleaned)
 
+            # Keep only known keys; coerce empty strings → null
             doc_profile: Dict[str, Any] = {}
             for key in blank:
                 val = parsed.get(key)
@@ -249,17 +274,17 @@ def extract_structured_fields_groq(
                 doc_profile[key] = val
 
             merged = _merge_profiles(merged, doc_profile)
-            print(f"[GROQ_SERVICE] Fields merged from doc #{idx + 1}.")
+            print(f"[GROQ_SERVICE] Merged fields from doc #{idx + 1}.")
 
         except json.JSONDecodeError as e:
-            print(f"[GROQ_SERVICE] JSON parse error from doc #{idx + 1}: {e}.")
+            print(f"[GROQ_SERVICE] JSON parse error doc #{idx + 1}: {e}.")
         except HTTPException:
             raise
         except Exception as e:
-            print(f"[GROQ_SERVICE] Extraction call failed for doc #{idx + 1}: {e}")
+            print(f"[GROQ_SERVICE] Extraction failed doc #{idx + 1}: {e}")
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
-                detail=f"Groq structured extraction failed: {str(e)}"
+                detail=f"Structured extraction failed: {str(e)}"
             )
 
     return merged
