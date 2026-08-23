@@ -26,6 +26,17 @@ class Profile(BaseModel):
     mother_name: Optional[str] = Field(default=None, description="Mother's name")
     blood_group: Optional[str] = Field(default=None, description="Blood group (e.g., O+, A-, B+)")
 
+    @model_validator(mode="before")
+    @classmethod
+    def map_aliases(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            # Map frontend aliases
+            if "city" in data and "city_locality" not in data:
+                data["city_locality"] = data.pop("city")
+            if "driving_licence_number" in data and "driving_license_number" not in data:
+                data["driving_license_number"] = data.pop("driving_licence_number")
+        return data
+
     # -----------------------------
     # IDENTITY INFORMATION
     # -----------------------------
