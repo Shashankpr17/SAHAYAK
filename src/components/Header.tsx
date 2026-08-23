@@ -86,6 +86,17 @@ export const Header: React.FC<HeaderProps> = ({ minimal = false }) => {
               >
                 {t("features")}
               </button>
+
+              {/* Direct Add Extension Button */}
+              <a
+                href="/sahayak-extension.zip"
+                download="sahayak-extension.zip"
+                className="font-label-md text-label-md bg-secondary/10 hover:bg-secondary/20 text-secondary px-3.5 py-1.5 rounded-lg font-bold border border-secondary/30 flex items-center gap-1.5 transition-all"
+                title="Download SAHAYAK Chrome Extension"
+              >
+                <span className="material-symbols-outlined text-[18px]">extension</span>
+                <span>Add Extension</span>
+              </a>
               
               {/* Language Selector Dropdown */}
               <div className="relative mr-2" ref={dropdownRef}>

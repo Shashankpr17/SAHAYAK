@@ -9,6 +9,8 @@ export const LandingPage: React.FC = () => {
   const { t } = useLanguage();
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('sahayak_token'));
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [showExtensionModal, setShowExtensionModal] = useState(false);
+  const [copiedUrl, setCopiedUrl] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated) return;
@@ -201,6 +203,13 @@ export const LandingPage: React.FC = () => {
                 </div>
               )}
               <button
+                onClick={() => setShowExtensionModal(true)}
+                className="font-label-md text-label-md bg-secondary/15 hover:bg-secondary/25 text-secondary border border-secondary/40 px-5 py-3 rounded-lg font-bold flex items-center gap-2 transition-all shadow-sm"
+              >
+                <span className="material-symbols-outlined text-[20px]">extension</span>
+                Add Chrome Extension
+              </button>
+              <button
                 onClick={() => handleScrollTo('how-it-works')}
                 className="font-label-md text-label-md bg-transparent border border-outline-variant text-on-surface px-6 py-3 rounded-lg hover:bg-surface-container-low transition-colors"
               >
@@ -304,6 +313,96 @@ export const LandingPage: React.FC = () => {
       </main>
       
       <Footer />
+
+      {/* Extension Install Guide Modal */}
+      {showExtensionModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
+          <div className="bg-surface dark:bg-on-surface border border-outline-variant/30 rounded-2xl p-6 md:p-8 max-w-lg w-full shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
+            
+            {/* Close Button */}
+            <button 
+              onClick={() => setShowExtensionModal(false)}
+              className="absolute top-4 right-4 text-on-surface-variant hover:text-on-surface p-1 rounded-lg hover:bg-surface-container-high transition-colors"
+            >
+              <span className="material-symbols-outlined">close</span>
+            </button>
+
+            {/* Header */}
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-xl bg-secondary/15 text-secondary flex items-center justify-center font-bold shrink-0">
+                <span className="material-symbols-outlined text-[28px]">extension</span>
+              </div>
+              <div>
+                <h3 className="font-title-lg text-lg font-bold text-on-surface">Install SAHAYAK Extension</h3>
+                <p className="text-xs text-on-surface-variant">Instant 1-minute setup without Web Store fees</p>
+              </div>
+            </div>
+
+            {/* Steps */}
+            <div className="flex flex-col gap-3.5 my-5 text-sm">
+              <div className="flex gap-3 items-start bg-surface-container-low p-3 rounded-xl border border-outline-variant/20">
+                <span className="w-6 h-6 rounded-full bg-primary text-on-primary font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">1</span>
+                <div className="flex-grow">
+                  <p className="font-semibold text-on-surface">Download the Extension Package</p>
+                  <p className="text-xs text-on-surface-variant mt-0.5">Click the button below to download and unzip <code>sahayak-extension.zip</code>.</p>
+                </div>
+              </div>
+
+              <div className="flex gap-3 items-start bg-surface-container-low p-3 rounded-xl border border-outline-variant/20">
+                <span className="w-6 h-6 rounded-full bg-primary text-on-primary font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">2</span>
+                <div className="flex-grow">
+                  <p className="font-semibold text-on-surface">Open Chrome Extensions</p>
+                  <p className="text-xs text-on-surface-variant mt-0.5">
+                    Navigate to <code className="bg-surface-container px-1 py-0.5 rounded font-mono text-[11px]">chrome://extensions</code> and turn ON <strong>Developer mode</strong> (top-right).
+                  </p>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText('chrome://extensions');
+                      setCopiedUrl(true);
+                      setTimeout(() => setCopiedUrl(false), 2000);
+                    }}
+                    className="mt-1.5 text-xs text-primary font-bold hover:underline flex items-center gap-1"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">content_copy</span>
+                    {copiedUrl ? 'Copied chrome://extensions!' : 'Copy "chrome://extensions"'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex gap-3 items-start bg-surface-container-low p-3 rounded-xl border border-outline-variant/20">
+                <span className="w-6 h-6 rounded-full bg-primary text-on-primary font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">3</span>
+                <div className="flex-grow">
+                  <p className="font-semibold text-on-surface">Click "Load unpacked"</p>
+                  <p className="text-xs text-on-surface-variant mt-0.5">Click <strong>Load unpacked</strong> (top-left) and select the unzipped <code>extension</code> folder. Done!</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              <a
+                href="/sahayak-extension.zip"
+                download="sahayak-extension.zip"
+                className="flex-1 bg-secondary hover:bg-secondary/90 text-on-secondary py-3 px-4 rounded-xl font-bold text-center flex items-center justify-center gap-2 shadow-sm transition-all text-sm"
+              >
+                <span className="material-symbols-outlined text-[18px]">download</span>
+                Download Extension (.zip)
+              </a>
+              <a
+                href="/test-form.html"
+                target="_blank"
+                rel="noreferrer"
+                className="bg-surface-container-high hover:bg-surface-container-highest text-on-surface py-3 px-4 rounded-xl font-bold text-center flex items-center justify-center gap-1.5 border border-outline-variant text-sm transition-all"
+              >
+                <span className="material-symbols-outlined text-[18px]">open_in_new</span>
+                Open Test Form
+              </a>
+            </div>
+
+          </div>
+        </div>
+      )}
+
       {isLoggingIn && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[100] flex flex-col items-center justify-center gap-4">
           <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
