@@ -231,17 +231,66 @@ def _merge_profiles(base: Dict[str, Any], new: Dict[str, Any]) -> Dict[str, Any]
     return merged
 
 
+def _extract_json_from_llm(user_content: str) -> str:
+    """Try Gemini 2.5 Flash first, then active Groq models as fallback."""
+    # 1. Try Gemini 2.5 Flash
+    gemini_key = os.getenv("GEMINI_API_KEY")
+    if gemini_key:
+        try:
+            import google.generativeai as genai
+            genai.configure(api_key=gemini_key)
+            model = genai.GenerativeModel("gemini-2.5-flash")
+            full_prompt = f"{_EXTRACT_SYSTEM}\n\n{user_content}"
+            res = model.generate_content(
+                full_prompt,
+                generation_config={"response_mime_type": "application/json", "temperature": 0.0}
+            )
+            if res.text:
+                return res.text.strip()
+        except Exception as ge:
+            print(f"[GROQ_SERVICE] Gemini JSON extraction attempt failed: {ge}")
+
+    # 2. Try Groq with active models
+    groq_key = os.getenv("GROQ_API_KEY")
+    if groq_key:
+        try:
+            from groq import Groq
+            client = Groq(api_key=groq_key)
+            groq_models = ["qwen/qwen3.6-27b", "openai/gpt-oss-120b", "llama-3.3-70b-versatile"]
+            for m in groq_models:
+                try:
+                    response = client.chat.completions.create(
+                        model=m,
+                        messages=[
+                            {"role": "system", "content": _EXTRACT_SYSTEM},
+                            {"role": "user", "content": user_content},
+                        ],
+                        temperature=0.0,
+                        max_tokens=1024
+                    )
+                    raw = response.choices[0].message.content or ""
+                    if raw:
+                        return raw.strip()
+                except Exception as me:
+                    print(f"[GROQ_SERVICE] Groq model '{m}' extraction attempt failed: {me}")
+        except Exception as e:
+            print(f"[GROQ_SERVICE] Groq extraction failed: {e}")
+
+    raise HTTPException(
+        status_code=status.HTTP_502_BAD_GATEWAY,
+        detail="Structured extraction service unavailable. Please check API keys."
+    )
+
+
 def extract_structured_fields_groq(
     raw_texts: List[str],
     document_type: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     Given a list of raw OCR strings (one per document), extract structured
-    profile fields using Groq LLM, merging results across all documents.
+    profile fields using LLM, merging results across all documents.
     Returns canonical profile dict.
     """
-    client = _get_groq_client()
-
     blank: Dict[str, Any] = {
         "full_name": None, "date_of_birth": None, "gender": None,
         "father_name": None, "mother_name": None, "blood_group": None,
@@ -267,17 +316,7 @@ def extract_structured_fields_groq(
 
         print(f"[GROQ_SERVICE] Extracting fields from doc #{idx + 1} ({len(raw_text)} chars)...")
         try:
-            response = client.chat.completions.create(
-                model=_EXTRACT_MODEL,
-                messages=[
-                    {"role": "system", "content": _EXTRACT_SYSTEM},
-                    {"role": "user", "content": user_content},
-                ],
-                temperature=0.0,
-                max_tokens=1024,
-                response_format={"type": "json_object"},
-            )
-            raw_json = response.choices[0].message.content or "{}"
+            raw_json = _extract_json_from_llm(user_content)
             cleaned = _clean_json_response(raw_json)
             parsed = json.loads(cleaned)
 
