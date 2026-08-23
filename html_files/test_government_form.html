@@ -3,37 +3,53 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Government of India — National DBT & Welfare Application Portal</title>
+  <title>SAHAYAK — Government Form Autofill Test Page</title>
   <style>
     :root {
       --primary: #0d47a1;
       --primary-dark: #002171;
-      --secondary: #ff6f00;
-      --bg: #f4f6f9;
+      --secondary: #e65100;
+      --bg: #f0f4f8;
       --surface: #ffffff;
       --border: #ced4da;
-      --text: #212529;
-      --text-muted: #6c757d;
+      --text: #1a202c;
     }
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
     }
     body {
       background-color: var(--bg);
       color: var(--text);
-      padding: 24px 16px;
+      padding: 30px 16px;
     }
     .container {
-      max-width: 900px;
+      max-width: 920px;
       margin: 0 auto;
       background: var(--surface);
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
       overflow: hidden;
-      border: 1px solid var(--border);
+      border: 1px solid #e2e8f0;
+    }
+    .test-badge-banner {
+      background: #fff3e0;
+      border-bottom: 2px dashed #ff9800;
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .test-badge-text {
+      font-size: 14px;
+      font-weight: 700;
+      color: #b78103;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
     .header-banner {
       background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
@@ -42,17 +58,16 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      border-bottom: 4px solid var(--secondary);
     }
     .header-title h1 {
-      font-size: 20px;
-      font-weight: 700;
+      font-size: 22px;
+      font-weight: 800;
       letter-spacing: 0.5px;
       text-transform: uppercase;
     }
     .header-title p {
       font-size: 13px;
-      opacity: 0.85;
+      opacity: 0.9;
       margin-top: 4px;
     }
     .form-content {
@@ -65,7 +80,7 @@
       text-transform: uppercase;
       letter-spacing: 0.5px;
       padding-bottom: 8px;
-      margin-bottom: 16px;
+      margin-bottom: 18px;
       border-bottom: 2px solid #e3f2fd;
       display: flex;
       align-items: center;
@@ -73,7 +88,7 @@
     }
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
       gap: 20px;
       margin-bottom: 28px;
     }
@@ -88,10 +103,10 @@
     label {
       font-size: 13px;
       font-weight: 600;
-      color: #37474f;
+      color: #334155;
     }
     .required {
-      color: #d32f2f;
+      color: #dc2626;
     }
     input[type="text"],
     input[type="date"],
@@ -99,31 +114,35 @@
     select,
     textarea {
       width: 100%;
-      padding: 10px 12px;
+      padding: 10px 14px;
       border: 1px solid var(--border);
-      border-radius: 4px;
+      border-radius: 6px;
       font-size: 14px;
-      background: #fafafa;
+      background: #f8fafc;
       transition: all 0.2s ease;
+      color: #0f172a;
     }
     input:focus, select:focus, textarea:focus {
       outline: none;
       border-color: var(--primary);
       background: #fff;
-      box-shadow: 0 0 0 3px rgba(13, 71, 161, 0.12);
+      box-shadow: 0 0 0 3px rgba(13, 71, 161, 0.15);
     }
     textarea {
       resize: vertical;
-      min-height: 70px;
+      min-height: 75px;
     }
-    .banner-note {
-      background: #e8f5e9;
-      border-left: 4px solid #2e7d32;
-      padding: 12px 16px;
-      border-radius: 4px;
+    .instruction-card {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      padding: 14px 18px;
+      border-radius: 8px;
       margin-bottom: 28px;
       font-size: 13px;
-      color: #1b5e20;
+      color: #166534;
+      display: flex;
+      align-items: center;
+      gap: 12px;
     }
     .btn-container {
       display: flex;
@@ -131,29 +150,29 @@
       gap: 16px;
       margin-top: 24px;
       padding-top: 20px;
-      border-top: 1px solid #e0e0e0;
+      border-top: 1px solid #e2e8f0;
     }
     .btn-submit {
       background: var(--primary);
       color: #fff;
       border: none;
-      padding: 12px 28px;
+      padding: 12px 30px;
       font-size: 15px;
       font-weight: 600;
-      border-radius: 4px;
+      border-radius: 6px;
       cursor: pointer;
     }
     .btn-submit:hover {
       background: var(--primary-dark);
     }
     .btn-reset {
-      background: #f5f5f5;
-      color: #424242;
-      border: 1px solid #bdbdbd;
-      padding: 12px 20px;
+      background: #f1f5f9;
+      color: #475569;
+      border: 1px solid #cbd5e1;
+      padding: 12px 22px;
       font-size: 14px;
       font-weight: 600;
-      border-radius: 4px;
+      border-radius: 6px;
       cursor: pointer;
     }
   </style>
@@ -161,32 +180,45 @@
 <body>
 
   <div class="container">
+    <!-- Top Demo Banner -->
+    <div class="test-badge-banner">
+      <div class="test-badge-text">
+        <span>🧪</span>
+        <span>TEST FORM — Use this form to test the SAHAYAK Chrome Extension Autofill functionality</span>
+      </div>
+      <span style="font-size: 11px; background: #e65100; color: #fff; padding: 3px 8px; border-radius: 12px; font-weight: 700;">TEST PAGE</span>
+    </div>
+
+    <!-- Main Portal Header -->
     <div class="header-banner">
       <div class="header-title">
-        <h1>Unified Social Security & DBT Portal</h1>
-        <p>Government of India — Ministry of Social Justice & Empowerment</p>
+        <h1>National DBT & Social Welfare Application Form</h1>
+        <p>Government of India — Ministry of Social Justice & Citizen Welfare</p>
       </div>
-      <div style="font-size: 36px;">🏛️</div>
+      <div style="font-size: 40px;">🏛️</div>
     </div>
 
     <div class="form-content">
-      <div class="banner-note">
-        💡 <strong>SAHAYAK Extension Test Form</strong>: Click the SAHAYAK extension icon and click <strong>"Autofill This Form"</strong> to automatically fill these details!
+      <div class="instruction-card">
+        <span style="font-size: 20px;">⚡</span>
+        <div>
+          <strong>How to test:</strong> Click the <strong>SAHAYAK</strong> extension icon in your browser toolbar, then click <strong>"Autofill This Form"</strong>. All fields will populate instantly with your verified profile.
+        </div>
       </div>
 
-      <form id="govForm" onsubmit="event.preventDefault(); alert('Form Submitted Successfully!');">
+      <form id="governmentApplicationForm" onsubmit="event.preventDefault(); alert('Test Form Submitted Successfully!');">
         
         <!-- SECTION 1: Personal Details -->
         <div class="section-title">1. Personal Information</div>
         <div class="grid">
           <div class="form-group">
-            <label for="fullName">Applicant Full Name <span class="required">*</span></label>
-            <input type="text" id="fullName" name="applicant_name" placeholder="Enter Full Name" autocomplete="name">
+            <label for="applicant_full_name">Applicant Full Name <span class="required">*</span></label>
+            <input type="text" id="applicant_full_name" name="full_name" placeholder="Enter Full Name" autocomplete="name">
           </div>
 
           <div class="form-group">
-            <label for="dob">Date of Birth (DOB) <span class="required">*</span></label>
-            <input type="text" id="dob" name="dob" placeholder="DD/MM/YYYY or YYYY-MM-DD" autocomplete="bday">
+            <label for="date_of_birth">Date of Birth (DOB) <span class="required">*</span></label>
+            <input type="text" id="date_of_birth" name="date_of_birth" placeholder="DD/MM/YYYY" autocomplete="bday">
           </div>
 
           <div class="form-group">
@@ -200,18 +232,18 @@
           </div>
 
           <div class="form-group">
-            <label for="fatherName">Father's / Guardian's Name</label>
-            <input type="text" id="fatherName" name="father_name" placeholder="Enter Father's Name">
+            <label for="father_name">Father's / Guardian's Name</label>
+            <input type="text" id="father_name" name="father_name" placeholder="Enter Father's Name">
           </div>
 
           <div class="form-group">
-            <label for="motherName">Mother's Name</label>
-            <input type="text" id="motherName" name="mother_name" placeholder="Enter Mother's Name">
+            <label for="mother_name">Mother's Name</label>
+            <input type="text" id="mother_name" name="mother_name" placeholder="Enter Mother's Name">
           </div>
 
           <div class="form-group">
-            <label for="bloodGroup">Blood Group</label>
-            <input type="text" id="bloodGroup" name="blood_group" placeholder="e.g. O+, A+, B+">
+            <label for="blood_group">Blood Group</label>
+            <input type="text" id="blood_group" name="blood_group" placeholder="e.g. O+, A+, B+">
           </div>
         </div>
 
@@ -219,23 +251,23 @@
         <div class="section-title">2. Identity Proof & Verification</div>
         <div class="grid">
           <div class="form-group">
-            <label for="aadhaarNo">Aadhaar Number (12 Digits) <span class="required">*</span></label>
-            <input type="text" id="aadhaarNo" name="aadhaar_number" placeholder="XXXX XXXX XXXX" maxlength="14">
+            <label for="aadhaar_number">Aadhaar Number (12 Digits) <span class="required">*</span></label>
+            <input type="text" id="aadhaar_number" name="aadhaar_number" placeholder="XXXX XXXX XXXX" maxlength="14">
           </div>
 
           <div class="form-group">
-            <label for="panNo">PAN Card Number</label>
-            <input type="text" id="panNo" name="pan_number" placeholder="ABCDE1234F" maxlength="10">
+            <label for="pan_number">PAN Card Number</label>
+            <input type="text" id="pan_number" name="pan_number" placeholder="ABCDE1234F" maxlength="10">
           </div>
 
           <div class="form-group">
-            <label for="dlNo">Driving Licence Number</label>
-            <input type="text" id="dlNo" name="driving_licence" placeholder="e.g. OD0220190012345">
+            <label for="driving_licence_number">Driving Licence Number</label>
+            <input type="text" id="driving_licence_number" name="driving_licence_number" placeholder="e.g. OD0220190012345">
           </div>
 
           <div class="form-group">
-            <label for="voterId">Voter ID / EPIC Number</label>
-            <input type="text" id="voterId" name="voter_id" placeholder="e.g. ABC1234567">
+            <label for="voter_id_number">Voter ID / EPIC Number</label>
+            <input type="text" id="voter_id_number" name="voter_id_number" placeholder="e.g. ABC1234567">
           </div>
         </div>
 
@@ -243,8 +275,8 @@
         <div class="section-title">3. Residential & Communication Address</div>
         <div class="grid">
           <div class="form-group full-width">
-            <label for="addressLine">Full Address Line <span class="required">*</span></label>
-            <textarea id="addressLine" name="residential_address" placeholder="House/Flat No, Street, Locality, Area" autocomplete="street-address"></textarea>
+            <label for="residential_address">Full Residential Address <span class="required">*</span></label>
+            <textarea id="residential_address" name="address" placeholder="House/Flat No, Street, Locality, Area" autocomplete="street-address"></textarea>
           </div>
 
           <div class="form-group">
@@ -258,13 +290,13 @@
           </div>
 
           <div class="form-group">
-            <label for="city">City / Town / Village</label>
-            <input type="text" id="city" name="city" placeholder="City or Locality name" autocomplete="address-level2">
+            <label for="city_locality">City / Town / Locality</label>
+            <input type="text" id="city_locality" name="city" placeholder="City or Locality name" autocomplete="address-level2">
           </div>
 
           <div class="form-group">
-            <label for="pinCode">PIN Code (6 Digits) <span class="required">*</span></label>
-            <input type="text" id="pinCode" name="pincode" placeholder="6-digit PIN" maxlength="6" autocomplete="postal-code">
+            <label for="pin_code">PIN Code (6 Digits) <span class="required">*</span></label>
+            <input type="text" id="pin_code" name="pin_code" placeholder="6-digit PIN" maxlength="6" autocomplete="postal-code">
           </div>
         </div>
 
@@ -272,8 +304,8 @@
         <div class="section-title">4. Socio-Economic Information</div>
         <div class="grid">
           <div class="form-group">
-            <label for="annualIncome">Annual Household Income (₹)</label>
-            <input type="text" id="annualIncome" name="annual_income" placeholder="e.g. 240000">
+            <label for="annual_income">Annual Household Income (₹)</label>
+            <input type="text" id="annual_income" name="annual_income" placeholder="e.g. 240000">
           </div>
 
           <div class="form-group">

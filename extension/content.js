@@ -27,6 +27,10 @@ try {
 
 // Mappings of target keys and their variation keywords
 const CONFIDENCE_KEYWORDS = {
+  full_name: {
+    kws: ['full name', 'fullname', 'applicant name', 'name', 'applicant fullname', 'complete name', 'name of applicant', 'नाम'],
+    weight: 15
+  },
   first_name: {
     kws: ['first name', 'firstname', 'given name', 'givenname', 'fname', 'forename', 'name_first'],
     weight: 10
@@ -37,26 +41,22 @@ const CONFIDENCE_KEYWORDS = {
   },
   middle_name: {
     kws: ['middle name', 'middlename', 'mname'],
-    weight: 10
-  },
-  full_name: {
-    kws: ['full name', 'fullname', 'applicant name', 'name', 'applicant fullname'],
-    weight: 5
-  },
-  date_of_birth: {
-    kws: ['dob', 'date of birth', 'birth date', 'birthdate', 'dob_date'],
     weight: 8
   },
+  date_of_birth: {
+    kws: ['dob', 'date of birth', 'birth date', 'birthdate', 'dob_date', 'birth_date', 'जन्म तिथि', 'date of birth (dob)'],
+    weight: 15
+  },
   day: {
-    kws: ['day', 'birth day', 'date', 'dob_day'],
+    kws: ['birth day', 'dob day', 'dob_day', 'dd', 'day of birth'],
     weight: 10
   },
   month: {
-    kws: ['month', 'birth month', 'mm', 'dob_month'],
+    kws: ['birth month', 'dob month', 'dob_month', 'mm', 'month of birth'],
     weight: 10
   },
   year: {
-    kws: ['year', 'birth year', 'yyyy', 'dob_year'],
+    kws: ['birth year', 'dob year', 'dob_year', 'yyyy', 'year of birth'],
     weight: 10
   },
   state: {
@@ -239,12 +239,26 @@ function triggerEvents(el) {
 // Task 4: Intelligent Name Split
 function parseName(fullName) {
   if (!fullName || typeof fullName !== "string") {
-    return { firstName: "", lastName: "" };
+    return { firstName: "", lastName: "", middleName: "", fullName: "" };
   }
-  const parts = fullName.trim().split(/\s+/);
+  const clean = fullName.trim();
+  const parts = clean.split(/\s+/);
   const firstName = parts[0] || "";
-  const lastName = parts.slice(1).join(" ") || "";
-  return { firstName, lastName };
+  const lastName = parts.length > 1 ? parts.slice(1).join(" ") : "";
+  const middleName = parts.length > 2 ? parts.slice(1, -1).join(" ") : "";
+  return { firstName, lastName, middleName, fullName: clean };
+}
+
+function getDOBFullValues(dobStr) {
+  if (!dobStr) return [];
+  const parsed = parseDOB(dobStr);
+  if (!parsed.day || !parsed.month || !parsed.year) {
+    return [dobStr];
+  }
+  const dmySlash = `${parsed.day}/${parsed.month}/${parsed.year}`;
+  const ymdDash = `${parsed.year}-${parsed.month}-${parsed.day}`;
+  const dmyDash = `${parsed.day}-${parsed.month}-${parsed.year}`;
+  return [dmySlash, ymdDash, dmyDash, dobStr];
 }
 
 function parseDOB(dateStr) {
@@ -603,15 +617,18 @@ async function runAutofill(profile) {
     console.log(logObj);
 
     // Dynamic field inputs mapping values
+    const fullDobList = getDOBFullValues(profile.date_of_birth || profile.dateOfBirth);
+    const resolvedFullName = profile.full_name || profile.fullName || nameData.fullName || "";
+
     const valuesToFill = {
-      first_name: [nameData.firstName],
+      full_name: [resolvedFullName],
+      first_name: [nameData.firstName || resolvedFullName],
       last_name: [nameData.lastName],
       middle_name: [nameData.middleName],
-      full_name: [nameData.fullName],
+      date_of_birth: fullDobList,
       day: dobValues ? dobValues.day : [dobData.day],
       month: dobValues ? dobValues.month : [dobData.monthName, dobData.month],
       year: dobValues ? dobValues.year : [dobData.year],
-      date_of_birth: [profile.date_of_birth || profile.dateOfBirth],
       state: [profile.state],
       address: [profile.address || profile.raw_address_text],
       address_line1: [addressData.line1],
