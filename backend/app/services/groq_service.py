@@ -114,7 +114,6 @@ def extract_raw_text_from_image_bytes(
                 detail="OCR service is not configured (missing GEMINI_API_KEY). Contact admin."
             )
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel("gemini-2.0-flash-lite")
 
         # Build inline image part
         image_part = {
@@ -125,9 +124,26 @@ def extract_raw_text_from_image_bytes(
         }
 
         print(f"[GROQ_SERVICE] Gemini Vision OCR: '{filename}' ({len(processed)} bytes)...")
-        response = model.generate_content([_VISION_PROMPT, image_part])
-        raw_text = response.text or ""
-        print(f"[GROQ_SERVICE] Gemini OCR returned {len(raw_text)} chars for '{filename}'.")
+
+        # Try active Gemini models in order of performance/availability
+        candidate_models = ["gemini-2.5-flash", "gemini-3.5-flash-lite", "gemini-3.6-flash"]
+        last_err = None
+        raw_text = ""
+
+        for m_name in candidate_models:
+            try:
+                model = genai.GenerativeModel(m_name)
+                response = model.generate_content([_VISION_PROMPT, image_part])
+                raw_text = response.text or ""
+                print(f"[GROQ_SERVICE] Gemini ({m_name}) returned {len(raw_text)} chars for '{filename}'.")
+                break
+            except Exception as me:
+                last_err = me
+                print(f"[GROQ_SERVICE] Gemini model '{m_name}' attempt failed: {me}")
+
+        if not raw_text and last_err:
+            raise last_err
+
         return raw_text.strip()
 
     except HTTPException:
