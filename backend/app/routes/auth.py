@@ -1,5 +1,6 @@
 import urllib.request
 import urllib.parse
+import urllib.error
 import json
 import os
 from fastapi import APIRouter, HTTPException, status
@@ -39,8 +40,21 @@ def google_auth(payload: GoogleLoginPayload):
         with urllib.request.urlopen(req) as response:
             res_body = response.read().decode("utf-8")
             token_info = json.loads(res_body)
+    except urllib.error.HTTPError as e:
+        try:
+            err_body = e.read().decode("utf-8", errors="replace")
+            err_json = json.loads(err_body)
+            err_code = err_json.get("error", "unknown_error")
+            err_desc = err_json.get("error_description", "No description provided")
+            print(f"[AUTH ERROR] Google token validation failed: {err_code} - {err_desc}")
+        except Exception:
+            print(f"[AUTH ERROR] Google token validation request failed with HTTP status {e.code}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid Google authentication token"
+        )
     except Exception as e:
-        print("[AUTH ERROR] Google token validation request failed:", e)
+        print("[AUTH ERROR] Unexpected error during Google token validation:", e)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid Google authentication token"
