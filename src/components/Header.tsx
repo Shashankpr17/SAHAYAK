@@ -60,15 +60,39 @@ export const Header: React.FC<HeaderProps> = ({ minimal = false }) => {
     <header className="bg-surface dark:bg-on-surface shadow-sm sticky top-0 z-50 w-full transition-colors duration-200">
       <nav className="flex justify-between items-center h-20 px-4 md:px-margin-desktop max-w-container-max mx-auto w-full">
         <Link 
-          className="text-title-lg font-title-lg font-bold text-primary dark:text-primary-fixed tracking-tight flex items-center"
+          className="flex items-center gap-2.5 group no-underline"
           to="/"
         >
           <img 
-            alt="National Emblem" 
-            className="h-8 w-auto inline-block mr-2"
-            src="/national-emblem.svg"
+            alt="SAHAYAK Emblem" 
+            style={{ height: '38px', width: 'auto', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.12))', objectFit: 'contain' }}
+            src="/emblem.jpg"
           />
-          {t("logo")}
+          <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
+            <span style={{
+              fontSize: '18px',
+              fontWeight: 800,
+              letterSpacing: '0.08em',
+              background: 'linear-gradient(135deg, #b45309 0%, #d97706 50%, #92400e 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              fontFamily: "'Inter', system-ui, sans-serif",
+              textTransform: 'uppercase',
+            }}>
+              SAHAYAK
+            </span>
+            <span style={{
+              fontSize: '9px',
+              color: '#78716c',
+              letterSpacing: '0.15em',
+              fontWeight: 500,
+              textTransform: 'uppercase',
+              fontFamily: "'Inter', system-ui, sans-serif",
+            }}>
+              सहायक · ସହାୟକ
+            </span>
+          </div>
         </Link>
 
         {!minimal && (
