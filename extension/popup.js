@@ -237,7 +237,7 @@ async function fetchProfileFromBackend() {
   if (btnText) btnText.textContent = 'Refreshing...';
 
   try {
-    // 1. Check for stored token
+    // 1. Check for stored token in extension storage
     let token = null;
     if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
       const stored = await chrome.storage.local.get(['sahayak_token', 'verifiedProfile']);
@@ -245,6 +245,41 @@ async function fetchProfileFromBackend() {
       if (stored.verifiedProfile && !currentProfile) {
         renderProfile(stored.verifiedProfile);
       }
+    }
+
+    // 1b. Fallback: Query open SAHAYAK tabs to sync token & profile directly from web app
+    if (!token && typeof chrome !== 'undefined' && chrome.tabs && chrome.scripting) {
+      try {
+        const tabs = await chrome.tabs.query({
+          url: ["https://*.vercel.app/*", "http://localhost:*/*", "http://127.0.0.1:*/*"]
+        });
+        for (const tab of tabs) {
+          try {
+            const results = await chrome.scripting.executeScript({
+              target: { tabId: tab.id },
+              func: () => ({
+                token: localStorage.getItem('sahayak_token'),
+                profile: localStorage.getItem('sahayak_user_profile')
+              })
+            });
+            if (results && results[0] && results[0].result) {
+              const res = results[0].result;
+              if (res.token) {
+                token = res.token;
+                chrome.storage.local.set({ sahayak_token: token });
+              }
+              if (res.profile && !currentProfile) {
+                try {
+                  const parsed = JSON.parse(res.profile);
+                  renderProfile(parsed);
+                  chrome.storage.local.set({ verifiedProfile: parsed, lastConnected: true });
+                } catch (pe) {}
+              }
+            }
+            if (token) break;
+          } catch (te) {}
+        }
+      } catch (qe) {}
     }
 
     const headers = {};
