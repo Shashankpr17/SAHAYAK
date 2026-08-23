@@ -82,8 +82,8 @@ export const LandingPage: React.FC = () => {
 
   const checkProfileAndNavigate = async (token: string) => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8001';
-      const res = await fetch(`${apiUrl}/profile`, {
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://sahayak-seven-rho.vercel.app';
+      const res = await fetch(`${apiUrl}/api/profile`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -104,7 +104,7 @@ export const LandingPage: React.FC = () => {
   const handleGoogleLogin = async (idToken: string) => {
     setIsLoggingIn(true);
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8001';
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://sahayak-seven-rho.vercel.app';
       const res = await fetch(`${apiUrl}/api/auth/google`, {
         method: 'POST',
         headers: {
