@@ -12,6 +12,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routes.profile import router as profile_router
 from app.routes.documents import router as documents_router
 from app.routes.auth import router as auth_router
+from app.routes.schemes import router as schemes_router
+from app.routes.eligibility import router as eligibility_router
 
 app = FastAPI(
     title="SAHAYAK Backend API",
@@ -40,6 +42,8 @@ app.add_middleware(
 app.include_router(profile_router)
 app.include_router(documents_router)
 app.include_router(auth_router)
+app.include_router(schemes_router)
+app.include_router(eligibility_router)
 
 
 @app.get("/")
