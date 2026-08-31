@@ -60,14 +60,19 @@ export const Header: React.FC<HeaderProps> = ({ minimal = false }) => {
     <header className="bg-surface dark:bg-on-surface shadow-sm sticky top-0 z-50 w-full transition-colors duration-200">
       <nav className="flex justify-between items-center h-20 px-4 md:px-margin-desktop max-w-container-max mx-auto w-full">
         <Link 
-          className="flex items-center gap-2.5 group no-underline"
+          className="flex items-center gap-3 group no-underline"
           to="/"
         >
-          <img 
-            alt="SAHAYAK Emblem" 
-            style={{ height: '38px', width: 'auto', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.12))', objectFit: 'contain' }}
-            src="/emblem.jpg"
-          />
+          <div 
+            className="flex items-center justify-center rounded-xl bg-black shadow-sm overflow-hidden p-1.5 transition-all duration-200 group-hover:scale-105"
+            style={{ width: '40px', height: '40px', background: '#000000', border: '1px solid rgba(255, 255, 255, 0.12)' }}
+          >
+            <img 
+              alt="SAHAYAK Emblem" 
+              src="/emblem-white.svg"
+              style={{ height: '28px', width: 'auto', objectFit: 'contain' }}
+            />
+          </div>
           <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
             <span style={{
               fontSize: '18px',
@@ -89,6 +94,7 @@ export const Header: React.FC<HeaderProps> = ({ minimal = false }) => {
               fontWeight: 500,
               textTransform: 'uppercase',
               fontFamily: "'Inter', system-ui, sans-serif",
+              marginTop: '3px'
             }}>
               सहायक · ସହାୟକ
             </span>
