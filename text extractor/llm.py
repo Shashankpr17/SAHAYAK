@@ -74,11 +74,16 @@ document type or not visible/legible):
   "document_type_confidence": "high" | "medium" | "low",
   "full_name": string or null,
   "father_or_husband_name": string or null,
-  "date_of_birth": "DD-MM-YYYY" string or null,
+  "mother_name": string or null,
+  "blood_group": string or null,
   "gender": "Male" | "Female" | "Other" | null,
+  "date_of_birth": "DD-MM-YYYY" string or null,
+  
   "aadhaar_number": string or null (12 digits, format as 'XXXX XXXX XXXX' if visible),
   "pan_number": string or null (10-char alphanumeric, format AAAAA9999A),
   "driving_license_number": string or null,
+  "voter_id_number": string or null,
+  
   "dl_issue_date": "DD-MM-YYYY" string or null,
   "dl_valid_till": "DD-MM-YYYY" string or null,
   "dl_vehicle_classes": array of strings or null,
@@ -91,6 +96,8 @@ document type or not visible/legible):
   "address_line1": string or null (house/flat/street/locality — everything before district),
   "address_line2": string or null (any additional locality/landmark line, or null),
   "district": string or null,
+  "city": string or null (locality/city name if explicitly printed, e.g. Pune, Patna, Begusarai, etc.),
+  "locality": string or null,
   "state": string or null,
   "pincode": string or null (6-digit Indian PIN code),
   "phone_number": string or null,
@@ -328,6 +335,7 @@ class KYCExtractor:
         )
 
         raw_output = completion.choices[0].message.content
+        print(f"[SAHAYAK DEBUG] LLM RESPONSE:\n{raw_output}")
         try:
             record = json.loads(raw_output)
         except json.JSONDecodeError:

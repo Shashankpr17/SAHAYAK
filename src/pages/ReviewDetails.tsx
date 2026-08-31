@@ -433,9 +433,27 @@ export const ReviewDetails: React.FC<ReviewDetailsProps> = ({ profile, onProfile
               </div>
             )}
             {saveError && (
-              <div className="mb-6 bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex items-center gap-3 text-sm text-red-900 dark:text-red-300 animate-fade-in">
-                <span className="material-symbols-outlined text-red-700 dark:text-red-500">error</span>
-                <span>{saveError}</span>
+              <div className="mb-6 bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-sm text-red-900 dark:text-red-300 animate-fade-in">
+                <div className="flex items-center gap-3">
+                  <span className="material-symbols-outlined text-red-700 dark:text-red-500 shrink-0">error</span>
+                  <span>{saveError}</span>
+                </div>
+                {(saveError.toLowerCase().includes('session') || 
+                  saveError.toLowerCase().includes('token') || 
+                  saveError.toLowerCase().includes('auth') || 
+                  saveError.toLowerCase().includes('unauthorized')) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      localStorage.removeItem('sahayak_token');
+                      localStorage.removeItem('sahayak_user');
+                      navigate('/');
+                    }}
+                    className="shrink-0 px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium text-xs shadow-sm transition-colors"
+                  >
+                    {language === 'en' ? 'Sign In Again' : language === 'hi' ? 'पुनः साइन इन करें' : 'ପୁନଃ ସାଇନ୍ ଇନ୍ କରନ୍ତୁ'}
+                  </button>
+                )}
               </div>
             )}
             

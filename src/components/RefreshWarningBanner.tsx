@@ -1,43 +1,41 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 
-const INNER_ROUTES = ['/upload', '/processing', '/review', '/schemes', '/scheme-details'];
+// Only active on routes where in-memory processing is ongoing
+const SENSITIVE_ROUTES = ['/processing'];
 
 export const RefreshWarningBanner: React.FC = () => {
   const location = useLocation();
-  const navigate = useNavigate();
   const [bannerVisible, setBannerVisible] = useState(false);
 
-  const isInnerPage = INNER_ROUTES.some(r => location.pathname.startsWith(r));
+  const isSensitivePage = SENSITIVE_ROUTES.some(r => location.pathname === r || location.pathname.startsWith(r + '/'));
 
-  // 1. Intercept F5 / Ctrl+R / browser refresh — show native browser warning
+  // 1. Intercept F5 / Ctrl+R / browser refresh during active document processing
   useEffect(() => {
-    if (!isInnerPage) return;
+    if (!isSensitivePage) {
+      setBannerVisible(false);
+      return;
+    }
 
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       e.preventDefault();
-      // Chrome requires returnValue to be set
-      e.returnValue = 'Refreshing will break the page. Use the app navigation instead.';
+      e.returnValue = 'Your documents are being processed. Refreshing will interrupt the analysis.';
       return e.returnValue;
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [isInnerPage]);
+    setBannerVisible(true);
 
-  // 2. Show an in-app sticky tip banner (always visible on inner pages, dismissible)
-  useEffect(() => {
-    if (!isInnerPage) return;
-    const dismissed = sessionStorage.getItem('sahayak_refresh_tip_ok');
-    if (!dismissed) setBannerVisible(true);
-  }, [isInnerPage, location.pathname]);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [isSensitivePage, location.pathname]);
 
   const dismiss = () => {
     setBannerVisible(false);
-    sessionStorage.setItem('sahayak_refresh_tip_ok', '1');
   };
 
-  if (!isInnerPage || !bannerVisible) return null;
+  if (!isSensitivePage || !bannerVisible) return null;
 
   return (
     <div
@@ -51,51 +49,35 @@ export const RefreshWarningBanner: React.FC = () => {
         gap: '12px',
         backgroundColor: '#0f172a',
         color: '#f1f5f9',
-        padding: '16px 18px',
-        borderRadius: '16px',
-        boxShadow: '0 12px 40px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.07)',
+        padding: '14px 16px',
+        borderRadius: '14px',
+        boxShadow: '0 12px 40px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.08)',
         fontSize: '13px',
         fontFamily: 'Inter, system-ui, sans-serif',
-        maxWidth: '340px',
-        animation: 'sahayakSlideIn 0.35s cubic-bezier(0.34,1.56,0.64,1)',
+        maxWidth: '320px',
+        animation: 'sahayakSlideIn 0.3s cubic-bezier(0.34,1.56,0.64,1)',
       }}
     >
       <div style={{
-        width: '36px',
-        height: '36px',
-        borderRadius: '10px',
-        background: 'linear-gradient(135deg, #f59e0b, #ef4444)',
+        width: '32px',
+        height: '32px',
+        borderRadius: '8px',
+        background: 'linear-gradient(135deg, #f59e0b, #d97706)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         flexShrink: 0,
-        fontSize: '18px',
+        fontSize: '16px',
       }}>
         ⚡
       </div>
 
       <div style={{ flex: 1 }}>
-        <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '5px', lineHeight: 1.3 }}>
-          Don't refresh this page!
+        <div style={{ fontWeight: 700, fontSize: '13px', marginBottom: '3px', lineHeight: 1.3 }}>
+          Processing in progress
         </div>
-        <div style={{ opacity: 0.65, lineHeight: 1.5 }}>
-          Refreshing causes a 404 error. Instead, use the{' '}
-          <button
-            onClick={() => { navigate('/'); dismiss(); }}
-            style={{
-              color: '#38bdf8',
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              padding: 0,
-              fontSize: '13px',
-              textDecoration: 'underline',
-              fontWeight: 600,
-            }}
-          >
-            home button
-          </button>
-          {' '}to navigate.
+        <div style={{ opacity: 0.7, fontSize: '12px', lineHeight: 1.4 }}>
+          Please do not refresh while your documents are being analyzed.
         </div>
       </div>
 
@@ -106,14 +88,13 @@ export const RefreshWarningBanner: React.FC = () => {
           background: 'rgba(255,255,255,0.08)',
           border: '1px solid rgba(255,255,255,0.12)',
           color: '#94a3b8',
-          borderRadius: '8px',
+          borderRadius: '6px',
           cursor: 'pointer',
-          padding: '4px 10px',
-          fontSize: '18px',
+          padding: '2px 8px',
+          fontSize: '16px',
           lineHeight: 1,
           flexShrink: 0,
           alignSelf: 'flex-start',
-          marginTop: '-2px',
         }}
       >
         ×
@@ -121,10 +102,11 @@ export const RefreshWarningBanner: React.FC = () => {
 
       <style>{`
         @keyframes sahayakSlideIn {
-          from { opacity: 0; transform: translateX(60px) scale(0.95); }
+          from { opacity: 0; transform: translateX(40px) scale(0.96); }
           to   { opacity: 1; transform: translateX(0)    scale(1);    }
         }
       `}</style>
     </div>
   );
 };
+

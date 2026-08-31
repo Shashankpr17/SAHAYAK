@@ -51,13 +51,16 @@ def get_or_create_guest_user(guest_id: str) -> str:
 
 def verify_access_token(token: str) -> Optional[dict]:
     """Validate token signature and expiration."""
-    if token and token.startswith("guest_"):
+    if not token:
+        return None
+
+    if token.startswith("guest_"):
         try:
             google_sub = get_or_create_guest_user(token)
             return {"google_sub": google_sub, "email": "guest@sahayak.local"}
         except Exception as e:
-            print("[AUTH ERROR] Failed to resolve guest user:", e)
-            return None
+            print("[AUTH WARNING] Failed to sync guest user to Firestore, proceeding with offline guest id:", e)
+            return {"google_sub": f"guest:{token}", "email": "guest@sahayak.local"}
 
     try:
         parts = token.split('.')

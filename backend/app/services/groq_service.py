@@ -1,8 +1,8 @@
 """
-groq_service.py — OCR + Structured Extraction for SAHAYAK
+groq_service.py — 100% Groq-Powered OCR + Structured Extraction for SAHAYAK
 
-Stage 1: Image bytes → Google Gemini Flash Vision → raw OCR text
-Stage 2: Raw OCR text → Groq LLM → canonical profile JSON
+Stage 1: Image bytes → Groq Vision (Qwen-27B) → raw OCR text
+Stage 2: Raw OCR text → Groq LLM (GPT-OSS-120B / Qwen-27B) → canonical profile JSON
 """
 
 import os
@@ -26,7 +26,7 @@ def _get_groq_client():
     if not api_key:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Extraction service is not configured. Contact admin."
+            detail="Groq service is not configured (missing GROQ_API_KEY). Please set GROQ_API_KEY."
         )
     try:
         from groq import Groq
@@ -34,26 +34,7 @@ def _get_groq_client():
     except ImportError:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Extraction service library missing. Contact admin."
-        )
-
-
-def _get_gemini_client():
-    """Return a configured Gemini GenerativeModel. Raises safe 500 if key missing."""
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="OCR service is not configured (missing GEMINI_API_KEY). Contact admin."
-        )
-    try:
-        import google.generativeai as genai
-        genai.configure(api_key=api_key)
-        return genai.GenerativeModel("gemini-2.0-flash-lite")
-    except ImportError:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="OCR service library missing. Contact admin."
+            detail="Groq library is missing. Install with 'pip install groq'."
         )
 
 
@@ -77,7 +58,7 @@ def _preprocess_image(image_bytes: bytes) -> bytes:
 
 
 # ---------------------------------------------------------------------------
-# Stage 1 — Gemini Flash Vision → raw OCR text
+# Stage 1 — Groq Vision → raw OCR text
 # ---------------------------------------------------------------------------
 
 _VISION_PROMPT = (
@@ -97,71 +78,63 @@ def extract_raw_text_from_image_bytes(
     filename: str = "document"
 ) -> str:
     """
-    Send image bytes to Gemini Flash Vision and return extracted raw OCR text.
+    Send image bytes to Groq Vision and return extracted raw OCR text.
     """
     if not image_bytes:
         raise ValueError(f"Image '{filename}' is empty.")
 
     processed = _preprocess_image(image_bytes)
+    client = _get_groq_client()
+    b64_img = base64.b64encode(processed).decode("utf-8")
+    data_url = f"data:image/jpeg;base64,{b64_img}"
 
-    try:
-        import google.generativeai as genai
+    candidate_models = ["qwen/qwen3.8-27b", "qwen/qwen3.6-27b"]
+    last_err = None
+    raw_text = ""
 
-        api_key = os.getenv("GEMINI_API_KEY")
-        if not api_key:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="OCR service is not configured (missing GEMINI_API_KEY). Contact admin."
+    for m_name in candidate_models:
+        try:
+            print(f"[GROQ_SERVICE] Running Groq Vision OCR with '{m_name}' on '{filename}'...")
+            response = client.chat.completions.create(
+                model=m_name,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": _VISION_PROMPT},
+                            {"type": "image_url", "image_url": {"url": data_url}}
+                        ]
+                    }
+                ],
+                temperature=0.0
             )
-        genai.configure(api_key=api_key)
-
-        # Build inline image part
-        image_part = {
-            "inline_data": {
-                "mime_type": "image/jpeg",
-                "data": base64.b64encode(processed).decode("utf-8")
-            }
-        }
-
-        print(f"[GROQ_SERVICE] Gemini Vision OCR: '{filename}' ({len(processed)} bytes)...")
-
-        # Try active Gemini models in order of performance/availability
-        candidate_models = ["gemini-2.5-flash", "gemini-3.5-flash-lite", "gemini-3.6-flash"]
-        last_err = None
-        raw_text = ""
-
-        for m_name in candidate_models:
-            try:
-                model = genai.GenerativeModel(m_name)
-                response = model.generate_content([_VISION_PROMPT, image_part])
-                raw_text = response.text or ""
-                print(f"[GROQ_SERVICE] Gemini ({m_name}) returned {len(raw_text)} chars for '{filename}'.")
+            raw_text = response.choices[0].message.content or ""
+            # Strip <think>...</think> reasoning tags if present
+            raw_text = re.sub(r"<think>.*?</think>", "", raw_text, flags=re.DOTALL).strip()
+            if raw_text:
+                print(f"[GROQ_SERVICE] Groq Vision ({m_name}) returned {len(raw_text)} chars for '{filename}'.")
                 break
-            except Exception as me:
-                last_err = me
-                print(f"[GROQ_SERVICE] Gemini model '{m_name}' attempt failed: {me}")
+        except Exception as me:
+            last_err = me
+            print(f"[GROQ_SERVICE] Groq Vision model '{m_name}' attempt failed: {me}")
 
-        if not raw_text and last_err:
-            raise last_err
-
-        return raw_text.strip()
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        err_str = str(e)
-        print(f"[GROQ_SERVICE] Gemini Vision failed for '{filename}': {err_str}")
+    if not raw_text and last_err:
+        try:
+            from app.services import ocr_service
+            return ocr_service.extract_text_from_image_bytes(image_bytes)
+        except Exception:
+            pass
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"OCR failed for '{filename}'. Please ensure the image is clear and try again."
+            detail=f"OCR failed for '{filename}'. Please ensure image is clear. Error: {str(last_err)}"
         )
+
+    return raw_text.strip()
 
 
 # ---------------------------------------------------------------------------
 # Stage 2 — Groq LLM → structured profile JSON
 # ---------------------------------------------------------------------------
-
-_EXTRACT_MODEL = "llama-3.3-70b-versatile"
 
 _EXTRACT_SYSTEM = """You are an expert at extracting structured personal information from Indian government document OCR text.
 
@@ -210,7 +183,6 @@ Return exactly this JSON structure (no extra keys):
 def _clean_json_response(text: str) -> str:
     """Strip markdown fences and whitespace from LLM output."""
     text = text.strip()
-    # Remove ```json ... ``` or ``` ... ```
     text = re.sub(r"^```(?:json)?\s*", "", text, flags=re.IGNORECASE)
     text = re.sub(r"\s*```$", "", text)
     return text.strip()
@@ -219,66 +191,45 @@ def _clean_json_response(text: str) -> str:
 def _merge_profiles(base: Dict[str, Any], new: Dict[str, Any]) -> Dict[str, Any]:
     """
     Merge two profile dicts.
-    Never overwrites a valid (non-null, non-empty) base value with null/empty from new.
+    Never overwrites a valid base value with null/empty from new.
     Always fills null/empty base with valid values from new.
     """
     merged = dict(base)
     for key, new_val in new.items():
         existing = merged.get(key)
-        # Only update if existing is absent AND new has a real value
         if new_val is not None and new_val != "" and (existing is None or existing == ""):
             merged[key] = new_val
     return merged
 
 
 def _extract_json_from_llm(user_content: str) -> str:
-    """Try Gemini 2.5 Flash first, then active Groq models as fallback."""
-    # 1. Try Gemini 2.5 Flash
-    gemini_key = os.getenv("GEMINI_API_KEY")
-    if gemini_key:
-        try:
-            import google.generativeai as genai
-            genai.configure(api_key=gemini_key)
-            model = genai.GenerativeModel("gemini-2.5-flash")
-            full_prompt = f"{_EXTRACT_SYSTEM}\n\n{user_content}"
-            res = model.generate_content(
-                full_prompt,
-                generation_config={"response_mime_type": "application/json", "temperature": 0.0}
-            )
-            if res.text:
-                return res.text.strip()
-        except Exception as ge:
-            print(f"[GROQ_SERVICE] Gemini JSON extraction attempt failed: {ge}")
+    """Extract structured JSON profile using Groq LLMs."""
+    client = _get_groq_client()
+    groq_models = ["openai/gpt-oss-120b", "qwen/qwen3.8-27b", "qwen/qwen3.6-27b"]
+    last_err = None
 
-    # 2. Try Groq with active models
-    groq_key = os.getenv("GROQ_API_KEY")
-    if groq_key:
+    for m in groq_models:
         try:
-            from groq import Groq
-            client = Groq(api_key=groq_key)
-            groq_models = ["qwen/qwen3.6-27b", "openai/gpt-oss-120b", "llama-3.3-70b-versatile"]
-            for m in groq_models:
-                try:
-                    response = client.chat.completions.create(
-                        model=m,
-                        messages=[
-                            {"role": "system", "content": _EXTRACT_SYSTEM},
-                            {"role": "user", "content": user_content},
-                        ],
-                        temperature=0.0,
-                        max_tokens=1024
-                    )
-                    raw = response.choices[0].message.content or ""
-                    if raw:
-                        return raw.strip()
-                except Exception as me:
-                    print(f"[GROQ_SERVICE] Groq model '{m}' extraction attempt failed: {me}")
-        except Exception as e:
-            print(f"[GROQ_SERVICE] Groq extraction failed: {e}")
+            response = client.chat.completions.create(
+                model=m,
+                messages=[
+                    {"role": "system", "content": _EXTRACT_SYSTEM},
+                    {"role": "user", "content": user_content},
+                ],
+                temperature=0.0,
+                max_tokens=1024
+            )
+            raw = response.choices[0].message.content or ""
+            raw = re.sub(r"<think>.*?</think>", "", raw, flags=re.DOTALL).strip()
+            if raw:
+                return raw.strip()
+        except Exception as me:
+            last_err = me
+            print(f"[GROQ_SERVICE] Groq model '{m}' extraction attempt failed: {me}")
 
     raise HTTPException(
         status_code=status.HTTP_502_BAD_GATEWAY,
-        detail="Structured extraction service unavailable. Please check API keys."
+        detail=f"Structured extraction service unavailable: {str(last_err)}"
     )
 
 
@@ -288,7 +239,7 @@ def extract_structured_fields_groq(
 ) -> Dict[str, Any]:
     """
     Given a list of raw OCR strings (one per document), extract structured
-    profile fields using LLM, merging results across all documents.
+    profile fields using Groq LLM, merging results across all documents.
     Returns canonical profile dict.
     """
     blank: Dict[str, Any] = {
@@ -343,3 +294,4 @@ def extract_structured_fields_groq(
             )
 
     return merged
+
